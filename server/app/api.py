@@ -300,16 +300,32 @@ def create_parcel(p: ParcelIn, request: Request):
         # 🔥 หา reservation ที่ยัง active ของ carrier
         today = thai_now().strftime("%Y%m%d")
 
+        # ลองหา reservation ใน section ที่ client ส่งมาก่อน
         reservation = (
             db.query(QueueReservation)
             .filter(
                 QueueReservation.section_id == p.section_id,
+                QueueReservation.carrier_id == carrier_id,
                 QueueReservation.date == today,
                 QueueReservation.status.in_(["active", "unactive"])
             )
             .with_for_update()
             .first()
         )
+
+        # ถ้าไม่เจอ (เช่น section แรกเต็มแล้ว) → หา section อื่นที่ยังว่าง
+        if not reservation:
+            reservation = (
+                db.query(QueueReservation)
+                .filter(
+                    QueueReservation.carrier_id == carrier_id,
+                    QueueReservation.date == today,
+                    QueueReservation.status.in_(["active", "unactive"])
+                )
+                .order_by(QueueReservation.start_seq)
+                .with_for_update()
+                .first()
+            )
 
         if not reservation:
             raise HTTPException(400, "ยังไม่มีคิวที่จองไว้")
@@ -318,8 +334,33 @@ def create_parcel(p: ParcelIn, request: Request):
 
         if next_queue > reservation.end_seq:
             reservation.status = "หมดแล้ว"
-            db.commit()
-            raise HTTPException(400, "คิวเต็มแล้ว")
+            db.flush()
+
+            # 🔥 ลองหา section ถัดไปของ carrier คนเดียวกัน
+            next_reservation = (
+                db.query(QueueReservation)
+                .filter(
+                    QueueReservation.carrier_id == carrier_id,
+                    QueueReservation.date == today,
+                    QueueReservation.status.in_(["active", "unactive"]),
+                    QueueReservation.id != reservation.id
+                )
+                .order_by(QueueReservation.start_seq)
+                .with_for_update()
+                .first()
+            )
+
+            if not next_reservation:
+                db.commit()
+                raise HTTPException(400, "คิวเต็มแล้ว")
+
+            reservation = next_reservation
+            next_queue = reservation.current_seq + 1
+
+            if next_queue > reservation.end_seq:
+                reservation.status = "หมดแล้ว"
+                db.commit()
+                raise HTTPException(400, "คิวเต็มแล้ว")
 
         reservation.current_seq = next_queue
         queue_number = str(next_queue)
