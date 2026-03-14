@@ -78,8 +78,8 @@ def normalize_tracking_value(value: str):
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET_KEY,
-    same_site="none",
-    https_only=True
+    same_site="lax",
+    https_only=False
 )
 
 
@@ -87,11 +87,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://localhost:8000",
-        "https://127.0.0.1:8000",
-        "https://192.168.249.105:8000",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
