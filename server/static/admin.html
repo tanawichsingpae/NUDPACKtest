@@ -568,7 +568,7 @@ hover:bg-red-100 active:scale-95 transition">
         </h1>
         <!-- Export button (right side) -->
         <button onclick="exportStrandedParcels()"
-          class="ml-auto flex items-center gap-1 bg-green-500 hover:bg-green-600
+          class="ml-auto flex items-center gap-1 bg-orange-500 hover:bg-orange-600
                  active:scale-95 transition text-white text-sm font-medium
                  px-3 py-2 rounded-xl shadow">
           <span class="material-symbols-outlined text-[18px]">download</span>
@@ -2177,11 +2177,18 @@ ${recipientHtml}
                         ${p.days_stranded} วัน
                       </span>
                     </div>
+                    <!-- ชื่อหน้ากล่อง highlight -->
+                    <div class="flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-purple-400 text-[15px]">badge</span>
+                      ${name !== "-"
+                        ? `<span class="text-sm font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">${escapeHtml(name)}</span>`
+                        : `<span class="text-xs text-gray-400 italic">ไม่ระบุชื่อ</span>`
+                      }
+                    </div>
                     <div class="flex gap-4 text-xs text-gray-500">
                       <span>เลขคิว <span class="font-semibold text-gray-700">${escapeHtml(p.queue_number ?? "-")}</span></span>
                       <span>เข้าเมื่อ: <span class="font-semibold text-gray-700">${formatThaiDate(p.created_at)}</span></span>
                     </div>
-                    ${name !== "-" ? `<div class="text-xs text-purple-600">ชื่อหน้ากล่อง: ${escapeHtml(name)}</div>` : ""}
                   </div>`;
               }).join("");
 
