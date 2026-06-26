@@ -1141,7 +1141,10 @@ hover:bg-red-100 active:scale-95 transition">
         }
 
         /* ---------- Search ---------- */
-        document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+        const _searchInputEl = document.getElementById('searchInput');
+        if (_searchInputEl) {
+          _searchInputEl.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+        }
         async function doSearch() {
           const q = document.getElementById('searchInput').value.trim();
           if (!q) return alert('Please input tracking or queue');
@@ -1261,17 +1264,19 @@ hover:bg-red-100 active:scale-95 transition">
           e.selectedIndex = arr.length - 1;
         }
 
-        document.getElementById('r_period')
-          .addEventListener('change', async () => {
+        const _rPeriodEl = document.getElementById('r_period');
+        if (_rPeriodEl) {
+          _rPeriodEl.addEventListener('change', async () => {
             await loadReportValues();
 
             // เลือกเดือนแรกอัตโนมัติ
             const sel = document.getElementById('r_periodValues');
-            if (sel.options.length > 0) sel.selectedIndex = 0;
+            if (sel && sel.options.length > 0) sel.selectedIndex = 0;
 
             // โหลด report ทันที
             loadReport();
           });
+        }
 
         /* ---------- load report ---------- */
         function compact(d) {
