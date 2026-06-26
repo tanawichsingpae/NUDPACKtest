@@ -1179,6 +1179,16 @@ def stranded_parcels(
         now = thai_now().replace(tzinfo=tz_thai)
         cutoff = now - timedelta(days=days)
 
+        print(f"[stranded] days={days}, now={now}, cutoff={cutoff}")
+
+        # ก่อน filter status → debug ดูจำนวนทั้งหมด
+        all_uncollected = (
+            db.query(Parcel)
+            .filter(Parcel.status.in_(["ยังไม่ได้รับ", "กำลังรอ"]))
+            .count()
+        )
+        print(f"[stranded] uncollected parcels (no date filter): {all_uncollected}")
+
         rows = (
             db.query(Parcel)
             .filter(
@@ -1188,6 +1198,8 @@ def stranded_parcels(
             .order_by(Parcel.created_at.asc())
             .all()
         )
+
+        print(f"[stranded] after date filter: {len(rows)} rows")
 
         # จัดกลุ่มตามวันที่เข้า (key = "YYYY-MM-DD")
         from collections import defaultdict

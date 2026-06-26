@@ -586,9 +586,10 @@ hover:bg-red-100 active:scale-95 transition">
                  shadow-sm transition
                  hover:border-orange-300
                  focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
-          <option value="30">30 วัน</option>
+          <option value="1">1 วัน</option>
+          <option value="30" selected>30 วัน</option>
           <option value="60">60 วัน</option>
-          <option value="180" selected>180 วัน</option>
+          <option value="180">180 วัน</option>
           <option value="custom">กำหนดเอง...</option>
         </select>
 
@@ -1587,7 +1588,10 @@ hover:bg-red-100 active:scale-95 transition">
         }
 
         /* initialize report values on load */
-        window.addEventListener('load', () => { if (document.querySelector('.tabBtn.active').dataset.tab === 'reports') initReports(); });
+        window.addEventListener('load', () => {
+          const activeTab = document.querySelector('.tabBtn.active');
+          if (activeTab && activeTab.dataset.tab === 'reports') initReports();
+        });
 
 
 
@@ -2050,18 +2054,19 @@ ${recipientHtml}
         /* ============================================================
            Stranded Page
         ============================================================ */
-        let currentStrandedDays = 180;
+        let currentStrandedDays = 30;
 
         async function openStrandedPage() {
+          console.log("[stranded] openStrandedPage called");
           document.getElementById("moreMenu").classList.add("hidden");
           adminPage.classList.add("hidden");
           document.getElementById("strandedPage").classList.remove("hidden");
 
           // reset dropdown to default
           const sel = document.getElementById("strandedDaysSelect");
-          sel.value = "180";
+          sel.value = "30";
           document.getElementById("strandedCustomWrap").classList.add("hidden");
-          currentStrandedDays = 180;
+          currentStrandedDays = 30;
 
           await loadStrandedParcels(currentStrandedDays);
         }
@@ -2097,6 +2102,16 @@ ${recipientHtml}
           loadStrandedParcels(val);
         }
 
+        // Enter key on custom input
+        document.addEventListener("DOMContentLoaded", () => {
+          const customInput = document.getElementById("strandedCustomDays");
+          if (customInput) {
+            customInput.addEventListener("keypress", (e) => {
+              if (e.key === "Enter") applyCustomStrandedDays();
+            });
+          }
+        });
+
         async function loadStrandedParcels(days) {
           const summaryEl = document.getElementById("strandedSummary");
           const listEl    = document.getElementById("strandedList");
@@ -2105,9 +2120,12 @@ ${recipientHtml}
           listEl.innerHTML    = "";
 
           try {
+            console.log(`[stranded] fetching /api/reports/stranded?days=${days}`);
             const res  = await fetch(`/api/reports/stranded?days=${days}`, { credentials: "include" });
-            if (!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
+            console.log(`[stranded] response status: ${res.status}`);
+            if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (status ${res.status})`);
             const data = await res.json();
+            console.log("[stranded] data:", data);
 
             // --- Summary card ---
             const label = `${days} วัน`;
