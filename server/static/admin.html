@@ -219,25 +219,18 @@ hover:bg-red-100 active:scale-95 transition">
       <div class="flex gap-2 items-center flex-wrap">
 
         <!-- queue search -->
-        <input id="queueSearch"
-       placeholder="ค้นหาเลขคิว"
-       class="border px-3 py-2 rounded-xl text-sm w-24">
+        <input id="queueSearch" placeholder="ค้นหาเลขคิว" class="border px-3 py-2 rounded-xl text-sm w-24">
 
         <!-- recipient search -->
-        <input id="recipientSearch"
-       placeholder="ค้นหาชื่อหน้ากล่อง"
-       class="border px-3 py-2 rounded-xl text-sm w-32">
-        
-        <!-- search button -->
-        <input id="dateFilter"
-       type="date"
-       class="hidden">
+        <input id="recipientSearch" placeholder="ค้นหาชื่อหน้ากล่อง" class="border px-3 py-2 rounded-xl text-sm w-32">
 
-<button type="button"
-        onclick="openCalendar()"
-        class="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-xl text-sm shadow">
-    ค้นหา
-</button>
+        <!-- search button -->
+        <input id="dateFilter" type="date" class="hidden">
+
+        <button type="button" onclick="openCalendar()"
+          class="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-xl text-sm shadow">
+          ค้นหา
+        </button>
 
       </div>
 
@@ -523,8 +516,8 @@ hover:bg-red-100 active:scale-95 transition">
         <div class="pt-6 text-center">
           <div class="mx-auto w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
             <span class="material-symbols-outlined text-red-500 text-3xl">
-  error
-</span>
+              error
+            </span>
           </div>
         </div>
 
@@ -573,6 +566,14 @@ hover:bg-red-100 active:scale-95 transition">
         <h1 class="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800">
           พัสดุตกค้าง
         </h1>
+        <!-- Export button (right side) -->
+        <button onclick="exportStrandedParcels()"
+          class="ml-auto flex items-center gap-1 bg-green-500 hover:bg-green-600
+                 active:scale-95 transition text-white text-sm font-medium
+                 px-3 py-2 rounded-xl shadow">
+          <span class="material-symbols-outlined text-[18px]">download</span>
+          Excel
+        </button>
       </div>
     </header>
 
@@ -580,8 +581,7 @@ hover:bg-red-100 active:scale-95 transition">
 
       <!-- Filter -->
       <div class="flex gap-2 mb-4 items-center">
-        <select id="strandedDaysSelect" onchange="onStrandedSelectChange()"
-          class="appearance-none rounded-xl border border-gray-300 bg-white
+        <select id="strandedDaysSelect" onchange="onStrandedSelectChange()" class="appearance-none rounded-xl border border-gray-300 bg-white
                  px-4 py-2 text-sm font-medium text-gray-700
                  shadow-sm transition
                  hover:border-orange-300
@@ -595,11 +595,9 @@ hover:bg-red-100 active:scale-95 transition">
 
         <!-- Custom days input (hidden by default) -->
         <div id="strandedCustomWrap" class="hidden flex items-center gap-2">
-          <input id="strandedCustomDays" type="number" min="1" placeholder="ระบุวัน"
-            class="border rounded-xl px-3 py-2 text-sm w-24
+          <input id="strandedCustomDays" type="number" min="1" placeholder="ระบุวัน" class="border rounded-xl px-3 py-2 text-sm w-24
                    focus:ring-2 focus:ring-orange-400 focus:outline-none" />
-          <button onclick="applyCustomStrandedDays()"
-            class="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-2 rounded-xl shadow
+          <button onclick="applyCustomStrandedDays()" class="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-2 rounded-xl shadow
                    active:scale-95 transition">
             ค้นหา
           </button>
@@ -936,12 +934,12 @@ hover:bg-red-100 active:scale-95 transition">
                         <div class="text-gray-400">เวลาได้รับ</div>
                         <div class="text-[11px]">
                           ${escapeHtml(
-                                    info.picked_up_at
-                                      ? new Date(info.picked_up_at).toLocaleString("th-TH", {
-                                        timeZone: "Asia/Bangkok",
-                                      })
-                                      : "-"
-                                  )}
+                  info.picked_up_at
+                    ? new Date(info.picked_up_at).toLocaleString("th-TH", {
+                      timeZone: "Asia/Bangkok",
+                    })
+                    : "-"
+                )}
                         </div>
                       </div>
                     </div>
@@ -2081,6 +2079,10 @@ ${recipientHtml}
           adminPage.classList.remove("hidden");
         }
 
+        function exportStrandedParcels() {
+          window.location.href = `/api/reports/stranded/export?days=${currentStrandedDays}`;
+        }
+
         function onStrandedSelectChange() {
           const sel = document.getElementById("strandedDaysSelect");
           const customWrap = document.getElementById("strandedCustomWrap");
@@ -2119,14 +2121,14 @@ ${recipientHtml}
 
         async function loadStrandedParcels(days) {
           const summaryEl = document.getElementById("strandedSummary");
-          const listEl    = document.getElementById("strandedList");
+          const listEl = document.getElementById("strandedList");
 
           summaryEl.innerHTML = `<div class="text-sm text-gray-400 text-center py-4">กำลังโหลด...</div>`;
-          listEl.innerHTML    = "";
+          listEl.innerHTML = "";
 
           try {
             console.log(`[stranded] fetching /api/reports/stranded?days=${days}`);
-            const res  = await fetch(`/api/reports/stranded?days=${days}`, { credentials: "include" });
+            const res = await fetch(`/api/reports/stranded?days=${days}`, { credentials: "include" });
             console.log(`[stranded] response status: ${res.status}`);
             if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (status ${res.status})`);
             const data = await res.json();
@@ -2156,14 +2158,14 @@ ${recipientHtml}
             const html = data.groups.map(group => {
               // แปลง YYYY-MM-DD → DD/MM/YYYY (พ.ศ.)
               const [y, m, d] = group.date.split("-");
-              const be_year   = parseInt(y) + 543;
+              const be_year = parseInt(y) + 543;
               const dateLabel = `${d}/${m}/${be_year}`;
 
               const rows = group.items.map(p => {
                 // badge สีตามจำนวนวันที่ค้าง
                 let badgeCls = "bg-yellow-100 text-yellow-700";
-                if (p.days_stranded >= 180)      badgeCls = "bg-red-100 text-red-700";
-                else if (p.days_stranded >= 90)  badgeCls = "bg-orange-100 text-orange-700";
+                if (p.days_stranded >= 180) badgeCls = "bg-red-100 text-red-700";
+                else if (p.days_stranded >= 90) badgeCls = "bg-orange-100 text-orange-700";
 
                 const name = p.unofficial_recipient || p.recipient_name || "-";
 
@@ -2176,8 +2178,8 @@ ${recipientHtml}
                       </span>
                     </div>
                     <div class="flex gap-4 text-xs text-gray-500">
-                      <span>คิว <span class="font-semibold text-gray-700">${escapeHtml(p.queue_number ?? "-")}</span></span>
-                      <span>เข้า <span class="font-semibold text-gray-700">${formatThaiDate(p.created_at)}</span></span>
+                      <span>เลขคิว <span class="font-semibold text-gray-700">${escapeHtml(p.queue_number ?? "-")}</span></span>
+                      <span>เข้าเมื่อ: <span class="font-semibold text-gray-700">${formatThaiDate(p.created_at)}</span></span>
                     </div>
                     ${name !== "-" ? `<div class="text-xs text-purple-600">ชื่อหน้ากล่อง: ${escapeHtml(name)}</div>` : ""}
                   </div>`;
@@ -2203,9 +2205,9 @@ ${recipientHtml}
         function formatThaiDate(iso) {
           if (!iso) return "-";
           const dt = new Date(iso);
-          const d  = String(dt.getDate()).padStart(2, "0");
-          const m  = String(dt.getMonth() + 1).padStart(2, "0");
-          const y  = dt.getFullYear() + 543;
+          const d = String(dt.getDate()).padStart(2, "0");
+          const m = String(dt.getMonth() + 1).padStart(2, "0");
+          const y = dt.getFullYear() + 543;
           return `${d}/${m}/${y}`;
         }
         function formatSlash(el) {
@@ -2320,12 +2322,12 @@ ${recipientHtml}
         }
 
         function closeCancelPopup() {
-  cancelTrackingNo = "";
-  document.getElementById("cancelTracking").textContent = "";
+          cancelTrackingNo = "";
+          document.getElementById("cancelTracking").textContent = "";
 
-  cancelPickupPopup.classList.add("hidden");
-  cancelPickupPopup.classList.remove("flex");
-}
+          cancelPickupPopup.classList.add("hidden");
+          cancelPickupPopup.classList.remove("flex");
+        }
         async function confirmCancelPickup() {
 
           try {
@@ -2369,15 +2371,15 @@ ${recipientHtml}
 
         function openCalendar() {
 
-    const input = document.getElementById("dateFilter");
+          const input = document.getElementById("dateFilter");
 
-    input.showPicker();   // เปิดปฏิทิน
+          input.showPicker();   // เปิดปฏิทิน
 
-    input.onchange = () => {
-        loadWaitingParcels();
-    };
+          input.onchange = () => {
+            loadWaitingParcels();
+          };
 
-}
+        }
       </script>
 
       <script>
