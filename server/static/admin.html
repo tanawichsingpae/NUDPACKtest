@@ -578,33 +578,31 @@ hover:bg-red-100 active:scale-95 transition">
 
     <div class="max-w-xl mx-auto p-4">
 
-      <!-- Filter toggle -->
-      <div class="flex gap-2 mb-4 flex-wrap">
-        <button onclick="setStrandedDays(1)"  id="strandedBtn1"
-          class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
-                 bg-orange-500 text-white border-orange-500">
-          1 วัน
-        </button>
-        <button onclick="setStrandedDays(7)"  id="strandedBtn7"
-          class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
-                 bg-white text-gray-600 hover:border-orange-400 hover:text-orange-500">
-          7 วัน
-        </button>
-        <button onclick="setStrandedDays(30)"  id="strandedBtn30"
-          class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
-                 bg-white text-gray-600 hover:border-orange-400 hover:text-orange-500">
-          30 วัน
-        </button>
-        <button onclick="setStrandedDays(90)"  id="strandedBtn90"
-          class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
-                 bg-white text-gray-600 hover:border-orange-400 hover:text-orange-500">
-          3 เดือน
-        </button>
-        <button onclick="setStrandedDays(180)" id="strandedBtn180"
-          class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
-                 bg-white text-gray-600 hover:border-orange-400 hover:text-orange-500">
-          6 เดือน
-        </button>
+      <!-- Filter -->
+      <div class="flex gap-2 mb-4 items-center">
+        <select id="strandedDaysSelect" onchange="onStrandedSelectChange()"
+          class="appearance-none rounded-xl border border-gray-300 bg-white
+                 px-4 py-2 text-sm font-medium text-gray-700
+                 shadow-sm transition
+                 hover:border-orange-300
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+          <option value="30">30 วัน</option>
+          <option value="60">60 วัน</option>
+          <option value="180" selected>180 วัน</option>
+          <option value="custom">กำหนดเอง...</option>
+        </select>
+
+        <!-- Custom days input (hidden by default) -->
+        <div id="strandedCustomWrap" class="hidden flex items-center gap-2">
+          <input id="strandedCustomDays" type="number" min="1" placeholder="ระบุวัน"
+            class="border rounded-xl px-3 py-2 text-sm w-24
+                   focus:ring-2 focus:ring-orange-400 focus:outline-none" />
+          <button onclick="applyCustomStrandedDays()"
+            class="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-2 rounded-xl shadow
+                   active:scale-95 transition">
+            ค้นหา
+          </button>
+        </div>
       </div>
 
       <!-- Summary card -->
@@ -2052,12 +2050,19 @@ ${recipientHtml}
         /* ============================================================
            Stranded Page
         ============================================================ */
-        let currentStrandedDays = 1;
+        let currentStrandedDays = 180;
 
         async function openStrandedPage() {
           document.getElementById("moreMenu").classList.add("hidden");
           adminPage.classList.add("hidden");
           document.getElementById("strandedPage").classList.remove("hidden");
+
+          // reset dropdown to default
+          const sel = document.getElementById("strandedDaysSelect");
+          sel.value = "180";
+          document.getElementById("strandedCustomWrap").classList.add("hidden");
+          currentStrandedDays = 180;
+
           await loadStrandedParcels(currentStrandedDays);
         }
 
@@ -2066,21 +2071,30 @@ ${recipientHtml}
           adminPage.classList.remove("hidden");
         }
 
-        async function setStrandedDays(days) {
-          currentStrandedDays = days;
+        function onStrandedSelectChange() {
+          const sel = document.getElementById("strandedDaysSelect");
+          const customWrap = document.getElementById("strandedCustomWrap");
 
-          // อัปเดต active state ปุ่ม
-          document.querySelectorAll(".strandedDayBtn").forEach(btn => {
-            btn.classList.remove("bg-orange-500", "text-white", "border-orange-500");
-            btn.classList.add("bg-white", "text-gray-600");
-          });
-          const activeBtn = document.getElementById(`strandedBtn${days}`);
-          if (activeBtn) {
-            activeBtn.classList.add("bg-orange-500", "text-white", "border-orange-500");
-            activeBtn.classList.remove("bg-white", "text-gray-600");
+          if (sel.value === "custom") {
+            customWrap.classList.remove("hidden");
+            document.getElementById("strandedCustomDays").focus();
+            return;
           }
 
-          await loadStrandedParcels(days);
+          customWrap.classList.add("hidden");
+          currentStrandedDays = parseInt(sel.value);
+          loadStrandedParcels(currentStrandedDays);
+        }
+
+        function applyCustomStrandedDays() {
+          const input = document.getElementById("strandedCustomDays");
+          const val = parseInt(input.value);
+          if (!val || val < 1) {
+            alert("กรุณาระบุจำนวนวัน (ตั้งแต่ 1 ขึ้นไป)");
+            return;
+          }
+          currentStrandedDays = val;
+          loadStrandedParcels(val);
         }
 
         async function loadStrandedParcels(days) {
@@ -2096,7 +2110,7 @@ ${recipientHtml}
             const data = await res.json();
 
             // --- Summary card ---
-            const label = days === 1 ? "1 วัน" : days === 7 ? "7 วัน" : days === 30 ? "30 วัน" : days === 90 ? "3 เดือน" : "6 เดือน";
+            const label = `${days} วัน`;
             summaryEl.innerHTML = `
               <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
                 <span class="material-symbols-outlined text-red-500 text-[28px]">warning</span>
