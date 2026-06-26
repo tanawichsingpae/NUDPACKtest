@@ -78,8 +78,8 @@ def normalize_tracking_value(value: str):
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET_KEY,
-    same_site="lax",
-    https_only=False
+    same_site="none",
+    https_only=True
 )
 
 
@@ -87,7 +87,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://localhost:8000",
+        "https://127.0.0.1:8000",
+        "https://192.168.249.105:8000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1159,6 +1163,68 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|monthly|yearl
     finally:
         db.close()
 
+@app.get("/api/reports/stranded")
+def stranded_parcels(
+    days: int = Query(180, ge=1),
+    admin=Depends(require_admin)
+):
+    """
+    คืนรายการพัสดุที่ยังไม่ได้รับ (status = 'ยังไม่ได้รับ' หรือ 'กำลังรอ')
+    และค้างมานานกว่า `days` วัน นับจาก created_at
+    จัดกลุ่มตามวันที่เข้า (created_at เป็น YYYY-MM-DD เวลาไทย UTC+7)
+    """
+    db = SessionLocal()
+    try:
+        tz_thai = timezone(timedelta(hours=7))
+        now = thai_now().replace(tzinfo=tz_thai)
+        cutoff = now - timedelta(days=days)
+
+        rows = (
+            db.query(Parcel)
+            .filter(
+                Parcel.status.in_(["ยังไม่ได้รับ", "กำลังรอ"]),
+                Parcel.created_at <= cutoff
+            )
+            .order_by(Parcel.created_at.asc())
+            .all()
+        )
+
+        # จัดกลุ่มตามวันที่เข้า (key = "YYYY-MM-DD")
+        from collections import defaultdict
+        groups: dict[str, list] = defaultdict(list)
+
+        for p in rows:
+            dt = p.created_at
+            if dt and dt.tzinfo is None:
+                dt = dt.replace(tzinfo=tz_thai)
+            date_key = dt.strftime("%Y-%m-%d") if dt else "unknown"
+            days_stranded = (now - dt).days if dt else 0
+
+            groups[date_key].append({
+                "id": p.id,
+                "tracking_number": p.tracking_number,
+                "queue_number": p.queue_number,
+                "status": p.status,
+                "recipient_name": p.recipient_name,
+                "unofficial_recipient": p.unofficial_recipient,
+                "created_at": dt.isoformat() if dt else None,
+                "days_stranded": days_stranded,
+            })
+
+        result = [
+            {"date": k, "items": v}
+            for k, v in sorted(groups.items())
+        ]
+
+        return {
+            "days_filter": days,
+            "total": len(rows),
+            "groups": result
+        }
+
+    finally:
+        db.close()
+
 @app.get("/api/reports/export")
 def export_report(
     period: str = "daily",
@@ -1465,6 +1531,75 @@ def list_carriers():
     finally:
         db.close()
 
+
+@app.post("/api/parcels/{tracking}/cancel-pickup")
+def cancel_pickup(
+    tracking: str,
+    admin = Depends(require_admin)
+):
+    db = SessionLocal()
+
+    try:
+        tracking_clean = normalize_tracking_value(tracking)
+
+        p = db.query(Parcel).filter(
+            normalize_tracking_column(Parcel.tracking_number)
+            == tracking_clean
+        ).first()
+
+        if not p:
+            raise HTTPException(
+                status_code=404,
+                detail="parcel not found"
+            )
+
+
+        # กันยกเลิกถ้ายังไม่ได้รับ
+        if not p.picked_up_at:
+            raise HTTPException(
+                status_code=400,
+                detail="พัสดุนี้ยังไม่ได้ถูกรับ"
+            )
+
+
+        # -----------------------------
+        # คืนสถานะกลับ
+        # -----------------------------
+        p.status = "ยังไม่ได้รับ"
+
+        p.recipient_name = None
+        p.admin_staff_name = None
+        p.picked_up_at = None
+
+
+        db.commit()
+        db.refresh(p)
+
+
+        write_audit(
+            db,
+            entity="พัสดุ",
+            entity_id=p.id,
+            action="ยกเลิกการรับพัสดุ",
+            user=f"เจ้าหน้าที่: {admin['name']}",
+            details=(
+                f"หมายเลขพัสดุ: {p.tracking_number}"
+                f"\nยกเลิกการรับโดย: {admin['name']}"
+            ),
+        )
+
+        db.commit()
+
+
+        return {
+            "ok": True,
+            "message": "ยกเลิกการรับพัสดุเรียบร้อย",
+            "tracking": p.tracking_number
+        }
+
+
+    finally:
+        db.close()
 from sqlalchemy import or_
 
 @app.get("/api/audit_logs")
