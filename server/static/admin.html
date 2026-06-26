@@ -579,7 +579,17 @@ hover:bg-red-100 active:scale-95 transition">
     <div class="max-w-xl mx-auto p-4">
 
       <!-- Filter toggle -->
-      <div class="flex gap-2 mb-4">
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <button onclick="setStrandedDays(1)"  id="strandedBtn1"
+          class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
+                 bg-orange-500 text-white border-orange-500">
+          1 วัน
+        </button>
+        <button onclick="setStrandedDays(7)"  id="strandedBtn7"
+          class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
+                 bg-white text-gray-600 hover:border-orange-400 hover:text-orange-500">
+          7 วัน
+        </button>
         <button onclick="setStrandedDays(30)"  id="strandedBtn30"
           class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
                  bg-white text-gray-600 hover:border-orange-400 hover:text-orange-500">
@@ -592,7 +602,7 @@ hover:bg-red-100 active:scale-95 transition">
         </button>
         <button onclick="setStrandedDays(180)" id="strandedBtn180"
           class="strandedDayBtn px-4 py-2 rounded-xl text-sm font-medium border transition
-                 bg-orange-500 text-white border-orange-500">
+                 bg-white text-gray-600 hover:border-orange-400 hover:text-orange-500">
           6 เดือน
         </button>
       </div>
@@ -2042,7 +2052,7 @@ ${recipientHtml}
         /* ============================================================
            Stranded Page
         ============================================================ */
-        let currentStrandedDays = 180;
+        let currentStrandedDays = 1;
 
         async function openStrandedPage() {
           document.getElementById("moreMenu").classList.add("hidden");
@@ -2086,7 +2096,7 @@ ${recipientHtml}
             const data = await res.json();
 
             // --- Summary card ---
-            const label = days === 30 ? "30 วัน" : days === 90 ? "3 เดือน" : "6 เดือน";
+            const label = days === 1 ? "1 วัน" : days === 7 ? "7 วัน" : days === 30 ? "30 วัน" : days === 90 ? "3 เดือน" : "6 เดือน";
             summaryEl.innerHTML = `
               <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
                 <span class="material-symbols-outlined text-red-500 text-[28px]">warning</span>
