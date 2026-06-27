@@ -5,7 +5,8 @@ Rewrites the dashboard_today endpoint in api.py:
  - Fixes section utilization to use current_seq from QueueReservation (same as Client sees)
 """
 
-path = r'd:\NUDPACKtest\server\app\api.py'
+import os
+path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'api.py')
 
 content = open(path, encoding='utf-8').read()
 
