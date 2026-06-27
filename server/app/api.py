@@ -2118,4 +2118,5 @@ def dashboard_today(admin=Depends(require_admin)):
         }
     finally:
         db.close()
+
 # EOF
