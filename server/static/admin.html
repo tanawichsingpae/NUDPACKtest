@@ -581,8 +581,7 @@ hover:bg-red-100 active:scale-95 transition">
           พัสดุตกค้าง
         </h1>
         <!-- Export button (right side) -->
-        <button onclick="exportStrandedParcels()"
-          class="ml-auto flex items-center gap-1 bg-orange-500 hover:bg-orange-600
+        <button onclick="exportStrandedParcels()" class="ml-auto flex items-center gap-1 bg-orange-500 hover:bg-orange-600
                  active:scale-95 transition text-white text-sm font-medium
                  px-3 py-2 rounded-xl shadow">
           <span class="material-symbols-outlined text-[18px]">download</span>
@@ -641,8 +640,7 @@ hover:bg-red-100 active:scale-95 transition">
         <h1 class="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800">
           ภาพรวมระบบ
         </h1>
-        <button onclick="loadDashboard()" id="dashRefreshBtn"
-          class="ml-auto size-9 rounded-full bg-slate-100
+        <button onclick="loadDashboard()" id="dashRefreshBtn" class="ml-auto size-9 rounded-full bg-slate-100
                  flex items-center justify-center hover:bg-slate-200 transition">
           <span class="material-symbols-outlined text-slate-600 text-[18px]">refresh</span>
         </button>
@@ -654,18 +652,18 @@ hover:bg-red-100 active:scale-95 transition">
       <!-- ① KPI วันนี้ -->
       <div>
         <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">วันนี้</p>
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
-            <div id="db-kpi-wait" class="text-2xl font-semibold text-primary">—</div>
-            <div class="text-xs text-gray-500 mt-0.5">รอรับ</div>
+        <div class="flex gap-2">
+          <div class="flex-1 bg-white border border-gray-100 rounded-xl p-3 shadow-sm min-w-0">
+            <div id="db-kpi-wait" class="text-2xl font-semibold text-primary truncate">—</div>
+            <div class="text-xs text-gray-500 mt-0.5 whitespace-nowrap">รอรับ</div>
           </div>
-          <div class="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
-            <div id="db-kpi-in" class="text-2xl font-semibold text-slate-700">—</div>
-            <div class="text-xs text-gray-500 mt-0.5">เข้าทั้งหมด</div>
+          <div class="flex-1 bg-white border border-gray-100 rounded-xl p-3 shadow-sm min-w-0">
+            <div id="db-kpi-in" class="text-2xl font-semibold text-slate-700 truncate">—</div>
+            <div class="text-xs text-gray-500 mt-0.5 whitespace-nowrap">เข้าทั้งหมด</div>
           </div>
-          <div class="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
-            <div id="db-kpi-out" class="text-2xl font-semibold text-slate-700">—</div>
-            <div class="text-xs text-gray-500 mt-0.5">รับออกแล้ว</div>
+          <div class="flex-1 bg-white border border-gray-100 rounded-xl p-3 shadow-sm min-w-0">
+            <div id="db-kpi-out" class="text-2xl font-semibold text-slate-700 truncate">—</div>
+            <div class="text-xs text-gray-500 mt-0.5 whitespace-nowrap">รับออกแล้ว</div>
           </div>
         </div>
       </div>
@@ -718,8 +716,7 @@ hover:bg-red-100 active:scale-95 transition">
       <!-- ⑤ Shortcut พัสดุตกค้าง -->
       <div>
         <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">แจ้งเตือน</p>
-        <button id="db-stranded-btn" onclick="goToStranded()"
-          class="w-full flex items-center gap-3 bg-white border border-red-200
+        <button id="db-stranded-btn" onclick="goToStranded()" class="w-full flex items-center gap-3 bg-white border border-red-200
                  rounded-xl px-4 py-3 shadow-sm hover:bg-red-50 transition text-left">
           <div class="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
             <span class="material-symbols-outlined text-red-500 text-[18px]">warning</span>
@@ -2206,11 +2203,11 @@ ${recipientHtml}
 
         async function loadDashboard() {
           /* ---- reset ---- */
-          ["db-kpi-wait","db-kpi-in","db-kpi-out",
-           "db-s-pending","db-s-waiting","db-s-done"].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = "...";
-          });
+          ["db-kpi-wait", "db-kpi-in", "db-kpi-out",
+            "db-s-pending", "db-s-waiting", "db-s-done"].forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.textContent = "...";
+            });
 
           try {
             const res = await fetch("/api/dashboard/today", { credentials: "include" });
@@ -2219,13 +2216,13 @@ ${recipientHtml}
 
             /* ① KPI */
             document.getElementById("db-kpi-wait").textContent = d.kpi.total_wait;
-            document.getElementById("db-kpi-in").textContent   = d.kpi.total_in;
-            document.getElementById("db-kpi-out").textContent  = d.kpi.total_out;
+            document.getElementById("db-kpi-in").textContent = d.kpi.total_in;
+            document.getElementById("db-kpi-out").textContent = d.kpi.total_out;
 
             /* ② สถานะ */
             document.getElementById("db-s-pending").textContent = d.status_breakdown.pending;
             document.getElementById("db-s-waiting").textContent = d.status_breakdown.waiting;
-            document.getElementById("db-s-done").textContent    = d.status_breakdown.done;
+            document.getElementById("db-s-done").textContent = d.status_breakdown.done;
 
 
             /* ④ Section utilization — 5×4 heatmap grid */
@@ -2249,7 +2246,7 @@ ${recipientHtml}
                   bg = "#f0fdf4"; fg = "#15803d"; border = "#bbf7d0";
                 }
                 const label = s.name;  // e.g. "1–50"
-                const sNum  = i + 1;   // S1…S20
+                const sNum = i + 1;   // S1…S20
                 return `
                   <div title="Section ${sNum}: ${s.used}/${s.total} (${pct}%)" style="background:${bg};border:1px solid ${border};" class="rounded-lg p-1.5 flex flex-col items-center justify-center gap-0.5 cursor-default select-none">
                     <span style="color:${fg};" class="text-[9px] font-semibold leading-none opacity-70">S${sNum}</span>
@@ -2282,7 +2279,7 @@ ${recipientHtml}
             if (updEl) updEl.textContent = `อัปเดตล่าสุด ${hh}:${mm} น.`;
 
           } catch (err) {
-            ["db-kpi-wait","db-kpi-in","db-kpi-out"].forEach(id => {
+            ["db-kpi-wait", "db-kpi-in", "db-kpi-out"].forEach(id => {
               const el = document.getElementById(id);
               if (el) el.textContent = "!";
             });
@@ -2418,9 +2415,9 @@ ${recipientHtml}
                     <div class="flex items-center gap-1.5">
                       <span class="material-symbols-outlined text-purple-400 text-[15px]">badge</span>
                       ${name !== "-"
-                        ? `<span class="text-sm font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">${escapeHtml(name)}</span>`
-                        : `<span class="text-xs text-gray-400 italic">ไม่ระบุชื่อ</span>`
-                      }
+                    ? `<span class="text-sm font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">${escapeHtml(name)}</span>`
+                    : `<span class="text-xs text-gray-400 italic">ไม่ระบุชื่อ</span>`
+                  }
                     </div>
                     <div class="flex gap-4 text-xs text-gray-500">
                       <span>เลขคิว <span class="font-semibold text-gray-700">${escapeHtml(p.queue_number ?? "-")}</span></span>
