@@ -1429,11 +1429,8 @@ hover:bg-red-100 active:scale-95 transition">
           renderReportTable(currentReportData);
 
           document.getElementById('summary').innerHTML = `
-  <div class="bg-white rounded-xl shadow-sm border border-slate-100
-              flex divide-x divide-slate-100 overflow-hidden">
-
     <!-- Check-in -->
-    <div class="flex-1 px-5 py-4">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-5 py-4">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
         พัสดุเข้า
       </p>
@@ -1448,7 +1445,7 @@ hover:bg-red-100 active:scale-95 transition">
     </div>
 
     <!-- Check-out -->
-    <div class="flex-1 px-5 py-4">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-5 py-4">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
         พัสดุออก
       </p>
@@ -1463,7 +1460,7 @@ hover:bg-red-100 active:scale-95 transition">
     </div>
 
     <!-- Remaining -->
-    <div class="flex-1 px-5 py-4">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-5 py-4">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
         คงเหลือ
       </p>
@@ -1476,8 +1473,6 @@ hover:bg-red-100 active:scale-95 transition">
         </span>
       </div>
     </div>
-
-  </div>
 `
 
           const tres = await fetch(
