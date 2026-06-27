@@ -2087,6 +2087,15 @@ hover:bg-red-100 active:scale-95 transition">
               params.append("recipient", recipientVal);
             }
 
+            // ถ้าไม่มีการค้นหาใดๆ เลย ให้แสดงข้อความ
+            if (!queue && !recipientVal && !dateUI && (!status || status === "ทั้งหมด")) {
+              const box = document.getElementById("parcelList");
+              if (box) {
+                box.innerHTML = `<div class="text-sm text-gray-500 text-center py-4">กรุณากรอกเลขคิวหรือชื่อหน้ากล่อง</div>`;
+              }
+              return;
+            }
+
 
             const res = await fetch(`/api/parcels?${params.toString()}`, {
               credentials: "include"
