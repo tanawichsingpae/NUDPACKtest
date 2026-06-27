@@ -2227,22 +2227,6 @@ ${recipientHtml}
             document.getElementById("db-s-waiting").textContent = d.status_breakdown.waiting;
             document.getElementById("db-s-done").textContent    = d.status_breakdown.done;
 
-            /* ③ Carrier chips */
-            const chipsEl = document.getElementById("db-carrier-chips");
-            if (d.carriers.length === 0) {
-              chipsEl.innerHTML = `<span class="text-xs text-gray-400">ไม่มีข้อมูล</span>`;
-            } else {
-              const totalWait = d.kpi.total_wait;
-              const allChip = `<span class="px-3 py-1 rounded-full text-xs font-medium
-                bg-orange-500 text-white border border-orange-500">
-                ทั้งหมด ${totalWait}</span>`;
-              const otherChips = d.carriers.map(c => `
-                <span class="px-3 py-1 rounded-full text-xs font-medium
-                  bg-white text-gray-600 border border-gray-200">
-                  ${escapeHtml(c.carrier_name)} <strong>${c.count}</strong>
-                </span>`).join("");
-              chipsEl.innerHTML = allChip + otherChips;
-            }
 
             /* ④ Section utilization */
             const secEl = document.getElementById("db-sections");
