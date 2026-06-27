@@ -699,18 +699,18 @@ hover:bg-red-100 active:scale-95 transition">
       <!-- ④ Section utilization -->
       <div>
         <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Section utilization</p>
-        <div id="db-sections" class="flex flex-col gap-1.5">
-          <span class="text-xs text-gray-400">กำลังโหลด...</span>
+        <div id="db-sections" class="grid grid-cols-5 gap-1.5">
+          <span class="text-xs text-gray-400 col-span-5">กำลังโหลด...</span>
         </div>
         <div class="flex gap-4 mt-2">
           <span class="flex items-center gap-1 text-[10px] text-gray-400">
-            <span class="w-2 h-2 rounded-sm bg-green-400 inline-block"></span>ปกติ &lt;75%
+            <span class="w-2 h-2 rounded-sm bg-green-200 inline-block"></span>ปกติ &lt;75%
           </span>
           <span class="flex items-center gap-1 text-[10px] text-gray-400">
-            <span class="w-2 h-2 rounded-sm bg-yellow-400 inline-block"></span>ใกล้เต็ม 75–99%
+            <span class="w-2 h-2 rounded-sm bg-yellow-300 inline-block"></span>ใกล้เต็ม 75–99%
           </span>
           <span class="flex items-center gap-1 text-[10px] text-gray-400">
-            <span class="w-2 h-2 rounded-sm bg-red-400 inline-block"></span>เต็ม 100%
+            <span class="w-2 h-2 rounded-sm bg-red-400 inline-block"></span>เต็ม ≥100%
           </span>
         </div>
       </div>
@@ -2228,28 +2228,33 @@ ${recipientHtml}
             document.getElementById("db-s-done").textContent    = d.status_breakdown.done;
 
 
-            /* ④ Section utilization */
+            /* ④ Section utilization — 5×4 heatmap grid */
             const secEl = document.getElementById("db-sections");
             if (d.sections.length === 0) {
-              secEl.innerHTML = `<span class="text-xs text-gray-400 col-span-4">ไม่มีข้อมูล section</span>`;
+              secEl.innerHTML = `<span class="text-xs text-gray-400 col-span-5">ไม่มีข้อมูล section</span>`;
             } else {
-              secEl.innerHTML = d.sections.map(s => {
+              secEl.innerHTML = d.sections.map((s, i) => {
                 const pct = Math.min(s.pct, 100);
-                let barColor, textColor, bgColor;
+                // สีพื้นหลัง — เข้มขึ้นตามปริมาณ
+                let bg, fg, border;
                 if (pct >= 100) {
-                  barColor = "bg-red-400"; textColor = "text-red-700"; bgColor = "bg-red-50";
+                  bg = "#fca5a5"; fg = "#7f1d1d"; border = "#f87171";
                 } else if (pct >= 75) {
-                  barColor = "bg-yellow-400"; textColor = "text-yellow-700"; bgColor = "bg-yellow-50";
+                  bg = `hsl(48,${40 + pct * 0.6}%,${90 - pct * 0.2}%)`;
+                  fg = "#713f12"; border = "#fde047";
+                } else if (pct >= 25) {
+                  bg = `hsl(142,${30 + pct * 0.5}%,${88 - pct * 0.25}%)`;
+                  fg = "#14532d"; border = "#86efac";
                 } else {
-                  barColor = "bg-green-400"; textColor = "text-green-700"; bgColor = "bg-green-50";
+                  bg = "#f0fdf4"; fg = "#15803d"; border = "#bbf7d0";
                 }
+                const label = s.name;  // e.g. "1–50"
+                const sNum  = i + 1;   // S1…S20
                 return `
-                  <div class="flex items-center gap-2 ${bgColor} rounded-lg px-3 py-1.5">
-                    <span class="text-[11px] font-medium text-gray-500 w-14 shrink-0">${s.name}</span>
-                    <div class="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                      <div class="${barColor} h-2 rounded-full transition-all" style="width:${pct}%"></div>
-                    </div>
-                    <span class="text-[11px] font-semibold ${textColor} w-16 text-right shrink-0">${s.used}/${s.total} (${pct}%)</span>
+                  <div title="Section ${sNum}: ${s.used}/${s.total} (${pct}%)" style="background:${bg};border:1px solid ${border};" class="rounded-lg p-1.5 flex flex-col items-center justify-center gap-0.5 cursor-default select-none">
+                    <span style="color:${fg};" class="text-[9px] font-semibold leading-none opacity-70">S${sNum}</span>
+                    <span style="color:${fg};" class="text-[13px] font-bold leading-none">${pct}%</span>
+                    <span style="color:${fg};" class="text-[8px] leading-none opacity-60">${s.used}/${s.total}</span>
                   </div>`;
               }).join("");
             }
