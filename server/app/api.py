@@ -2086,6 +2086,7 @@ def dashboard_today(admin=Depends(require_admin)):
             pct = round(used / total_slots * 100) if total_slots else 0
             section_data.append({
                 "id":        s.id,
+                "name":      f"{s.start_seq}–{s.end_seq}",
                 "start_seq": s.start_seq,
                 "end_seq":   s.end_seq,
                 "total":     total_slots,
