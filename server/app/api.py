@@ -2074,14 +2074,16 @@ def dashboard_today(admin=Depends(require_admin)):
         # เรียงมากไปน้อย
         carrier_data.sort(key=lambda x: x["count"], reverse=True)
 
-        # Section utilization
+        # Section utilization — เฉพาะพัสดุวันนี้เท่านั้น
         from sqlalchemy import func as sqlfunc
         sections = db.query(QueueSection).order_by(QueueSection.start_seq).all()
         section_data = []
         for s in sections:
             total_slots = s.end_seq - s.start_seq + 1
             used = db.query(sqlfunc.count(Parcel.id)).filter(
-                Parcel.section_id == s.id
+                Parcel.section_id == s.id,
+                Parcel.created_at >= today_start,
+                Parcel.created_at <  today_end
             ).scalar() or 0
             pct = round(used / total_slots * 100) if total_slots else 0
             section_data.append({
@@ -2093,6 +2095,7 @@ def dashboard_today(admin=Depends(require_admin)):
                 "used":      used,
                 "pct":       pct
             })
+
 
         # พัสดุตกค้าง >30 วัน (preview count)
         cutoff_30 = now - timedelta(days=30)
