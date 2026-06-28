@@ -1107,6 +1107,10 @@ def report_summary(
     try:
         rows = db.query(Parcel).order_by(Parcel.created_at.desc()).all()
 
+        carriers = {c.carrier_id: c.carrier_name for c in db.query(CarrierList).all()}
+        carrier_dist = {}
+        peak_hours = {}
+
         checkin = 0
         checkout = 0
         items = []
@@ -1131,6 +1135,14 @@ def report_summary(
             checkin += 1
             if p.status == "ได้รับแล้ว":
                 checkout += 1
+                
+            # Carrier distribution
+            cname = carriers.get(p.carrier_id, "ไม่ระบุ") if p.carrier_id else "ไม่ระบุ"
+            carrier_dist[cname] = carrier_dist.get(cname, 0) + 1
+            
+            # Peak hours
+            hour_str = dt.strftime("%H:00")
+            peak_hours[hour_str] = peak_hours.get(hour_str, 0) + 1
 
             items.append({
                 "id": p.id,
@@ -1143,6 +1155,9 @@ def report_summary(
             })
 
         remaining = checkin - checkout
+        
+        carrier_dist_list = [{"label": k, "value": v} for k, v in carrier_dist.items()]
+        peak_hours_list = [{"label": k, "value": v} for k, v in sorted(peak_hours.items())]
 
         return {
             "period": period,
@@ -1151,6 +1166,8 @@ def report_summary(
             "checkin": checkin,
             "checkout": checkout,
             "remaining": remaining,
+            "carrier_dist": carrier_dist_list,
+            "peak_hours": peak_hours_list,
             "items": items
         }
 

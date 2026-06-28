@@ -778,9 +778,34 @@ hover:bg-red-100 active:scale-95 transition">
 
       </div>
 
-      <div id="summary" class="grid grid-cols-3 gap-4 mb-6"> </div>
+      <!-- Row 1: Summary Cards & Gauge -->
+      <div id="summary" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"></div>
 
-      <canvas id="summaryChart" height="160"></canvas>
+      <!-- Row 2: Mixed Chart -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mb-6 relative">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          พัสดุเข้า-ออกรวม
+        </p>
+        <canvas id="summaryChart" height="120"></canvas>
+      </div>
+
+      <!-- Row 3: Insights -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <!-- Doughnut -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 relative">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            สัดส่วนพัสดุตามขนส่ง
+          </p>
+          <canvas id="carrierChart" height="200"></canvas>
+        </div>
+        <!-- Horizontal Bar -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 relative">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            ช่วงเวลาเร่งด่วน (Peak Hours)
+          </p>
+          <canvas id="peakChart" height="200"></canvas>
+        </div>
+      </div>
 
       <div class="flex gap-2 my-3">
         <button onclick="toggleReportEdit()" class="bg-orange-500 text-white text-xs px-3 py-2 rounded-lg shadow
@@ -1421,52 +1446,47 @@ hover:bg-red-100 active:scale-95 transition">
           currentReportData = sdata.items || [];
           renderReportTable(currentReportData);
 
+          const uncolRate = sdata.checkin > 0 ? ((sdata.remaining / sdata.checkin) * 100).toFixed(1) : 0;
+          const gc = uncolRate > 50 ? 'text-red-500' : (uncolRate > 20 ? 'text-orange-500' : 'text-emerald-500');
+          const bgc = uncolRate > 50 ? 'bg-red-500' : (uncolRate > 20 ? 'bg-orange-500' : 'bg-emerald-500');
+
           document.getElementById('summary').innerHTML = `
-    <!-- Check-in -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-5 py-4">
-      <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-        พัสดุเข้า
-      </p>
-      <div class="flex items-center gap-2 mt-1">
-        <span class="material-symbols-outlined text-emerald-500 text-xl">
-          move_to_inbox
-        </span>
-        <span class="text-2xl font-bold text-slate-900">
-          ${sdata.checkin}
-        </span>
+      <!-- Check-in -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-4 py-3 flex flex-col justify-center">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          พัสดุเข้า
+        </p>
+        <div class="flex items-center gap-2 mt-1">
+          <span class="material-symbols-outlined text-emerald-500 text-lg">move_to_inbox</span>
+          <span class="text-2xl font-bold text-slate-900">${sdata.checkin}</span>
+        </div>
       </div>
-    </div>
+  
+      <!-- Check-out -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-4 py-3 flex flex-col justify-center">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          พัสดุออก
+        </p>
+        <div class="flex items-center gap-2 mt-1">
+          <span class="material-symbols-outlined text-orange-500 text-lg">outbox</span>
+          <span class="text-2xl font-bold text-slate-900">${sdata.checkout}</span>
+        </div>
+      </div>
 
-    <!-- Check-out -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-5 py-4">
-      <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-        พัสดุออก
-      </p>
-      <div class="flex items-center gap-2 mt-1">
-        <span class="material-symbols-outlined text-orange-500 text-xl">
-          outbox
-        </span>
-        <span class="text-2xl font-bold text-slate-900">
-          ${sdata.checkout}
-        </span>
+      <!-- Uncollected Rate (Gauge text) -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-4 py-3 flex flex-col justify-center relative overflow-hidden">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          อัตราตกค้างสะสม
+        </p>
+        <div class="mt-1 flex items-baseline gap-1">
+            <span class="text-2xl font-bold ${gc}">${uncolRate}</span>
+            <span class="text-sm font-semibold ${gc}">%</span>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-1.5 bg-slate-100">
+            <div class="h-full ${bgc} transition-all duration-1000" style="width: ${uncolRate}%"></div>
+        </div>
       </div>
-    </div>
-
-    <!-- Remaining -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-100 px-5 py-4">
-      <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-        คงเหลือ
-      </p>
-      <div class="flex items-center gap-2 mt-1">
-        <span class="material-symbols-outlined text-blue-500 text-xl">
-          inventory_2
-        </span>
-        <span class="text-2xl font-bold text-slate-900">
-          ${sdata.remaining}
-        </span>
-      </div>
-    </div>
-`
+  `;
 
           const tres = await fetch(
             `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
@@ -1596,460 +1616,222 @@ hover:bg-red-100 active:scale-95 transition">
         }
 
         /* ---------- chart ---------- */
-        function renderChart(labels, checkin, checkout, period) {
-          const formattedLabels = labels.map(l => {
-            if (period === 'daily' && l.length === 8) return `${l.slice(0, 4)}-${l.slice(4, 6)}-${l.slice(6)}`;
-            if (period === 'monthly' && l.length === 6) return `${l.slice(0, 4)}-${l.slice(4, 6)}`;
-            return l;
-          });
+        let carrierChartInst = null;
+          let peakChartInst = null;
 
-          const ctx = document.getElementById('summaryChart').getContext('2d');
-          if (chartInst) chartInst.destroy();
-          // gradient เขียว
-          const greenGrad = ctx.createLinearGradient(0, 0, 0, 180)
-          greenGrad.addColorStop(0, 'rgba(34,197,94,0.25)')
-          greenGrad.addColorStop(1, 'rgba(34,197,94,0)')
-
-          // gradient ส้ม
-          const orangeGrad = ctx.createLinearGradient(0, 0, 0, 180)
-          orangeGrad.addColorStop(0, 'rgba(249,115,22,0.25)')
-          orangeGrad.addColorStop(1, 'rgba(249,115,22,0)')
-          chartInst = new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: formattedLabels,
-              datasets: [{
-                label: 'พัสดุเข้า',
-                data: checkin,
-                borderColor: '#22c55e',
-                backgroundColor: greenGrad,
-                usePointStyle: true,
-                fill: true,
-                tension: 0.35,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#22c55e',
-                pointBorderWidth: 2
-
+          function renderChart(labels, checkin, checkout, period) {
+            const formattedLabels = labels.map(l => {
+              if (period === 'daily' && l.length === 8) return `${l.slice(0, 4)}-${l.slice(4, 6)}-${l.slice(6)}`;
+              if (period === 'monthly' && l.length === 6) return `${l.slice(0, 4)}-${l.slice(4, 6)}`;
+              return l;
+            });
+  
+            const ctx = document.getElementById('summaryChart').getContext('2d');
+            if (chartInst) chartInst.destroy();
+            // gradient เขียว
+            const greenGrad = ctx.createLinearGradient(0, 0, 0, 180)
+            greenGrad.addColorStop(0, 'rgba(34,197,94,0.25)')
+            greenGrad.addColorStop(1, 'rgba(34,197,94,0)')
+  
+            // gradient ส้ม
+            const orangeGrad = ctx.createLinearGradient(0, 0, 0, 180)
+            orangeGrad.addColorStop(0, 'rgba(249,115,22,0.25)')
+            orangeGrad.addColorStop(1, 'rgba(249,115,22,0)')
+            
+            // Mixed Chart: Line + Bar
+            chartInst = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: formattedLabels,
+                datasets: [
+                {
+                  type: 'line',
+                  label: 'พัสดุเข้า (แนวโน้ม)',
+                  data: checkin,
+                  borderColor: '#22c55e',
+                  backgroundColor: greenGrad,
+                  usePointStyle: true,
+                  fill: true,
+                  tension: 0.4,
+                  borderWidth: 3,
+                  pointRadius: 0,
+                  pointHoverRadius: 6,
+                  pointBackgroundColor: '#fff',
+                  pointBorderColor: '#22c55e',
+                  pointBorderWidth: 2
+                },
+                {
+                  type: 'bar',
+                  label: 'พัสดุเข้ารายวัน',
+                  data: checkin,
+                  backgroundColor: '#4ade80',
+                  borderRadius: 4,
+                  barPercentage: 0.6,
+                  categoryPercentage: 0.8
+                },
+                {
+                  type: 'bar',
+                  label: 'พัสดุออกรายวัน',
+                  data: checkout,
+                  backgroundColor: '#fb923c',
+                  borderRadius: 4,
+                  barPercentage: 0.6,
+                  categoryPercentage: 0.8
+                }
+                ]
               },
-              {
-                label: 'พัสดุออก',
-                data: checkout,
-                borderColor: '#f97316',
-                backgroundColor: orangeGrad,
-                fill: true,
-                tension: 0.35,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#f97316',
-                pointBorderWidth: 2
-              }
-              ]
-            },
-            options: {
-              responsive: true, plugins: {
-                legend: {
-                  position: 'top',
-                  labels: {
-                    usePointStyle: true,     // ⭐ สำคัญ
-                    pointStyle: 'circle',    // ⭐ วงกลม
-                    boxWidth: 8,
-                    boxHeight: 8,
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                  mode: 'index',
+                  intersect: false,
+                },
+                plugins: {
+                  legend: {
+                    position: 'top',
+                    labels: {
+                      usePointStyle: true,
+                      font: { family: "'Noto Sans Thai Looped', sans-serif", size: 12 }
+                    }
+                  },
+                  tooltip: {
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    titleColor: '#1e293b',
+                    bodyColor: '#334155',
+                    borderColor: '#e2e8f0',
+                    borderWidth: 1,
                     padding: 12,
-                    font: { size: 11 }
+                    boxPadding: 6,
+                    usePointStyle: true,
+                    titleFont: { family: "'Noto Sans Thai Looped', sans-serif", size: 13, weight: 'bold' },
+                    bodyFont: { family: "'Noto Sans Thai Looped', sans-serif", size: 12 }
+                  }
+                },
+                scales: {
+                  x: {
+                    grid: { display: false },
+                    ticks: { font: { family: "'Noto Sans Thai Looped', sans-serif" }, color: '#64748b' }
+                  },
+                  y: {
+                    grid: {
+                      color: '#f1f5f9',
+                      drawBorder: false,
+                      borderDash: [5, 5]
+                    },
+                    ticks: { font: { family: "'Noto Sans Thai Looped', sans-serif" }, color: '#64748b', precision: 0 },
+                    beginAtZero: true
                   }
                 }
-              }, scales: { y: { beginAtZero: true } }
-            }
-          });
-        }
-
-        /* ---------- export ---------- */
-        function exportReport(fmt = "csv") {
-
-          const start = unslash(document.getElementById("r_start").value);
-          const end = unslash(document.getElementById("r_end").value);
-
-          if (!start || !end) {
-            alert("กรุณาเลือกวันเริ่มและวันสิ้นสุด");
-            return;
-          }
-
-          const qs = new URLSearchParams({
-            period: "daily",
-            start: start,
-            end: end,
-            fmt: fmt
-          });
-
-          window.location = `/api/reports/export?${qs.toString()}`;
-        }
-        /* ---------- Utilities ---------- */
-        function setStatus(s) { try { document.getElementById('scanStatus').innerText = s; } catch (e) { } }
-        function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-        function escapeAttr(s) { return (String(s || '').replace(/"/g, '&quot;')); }
-        function escapeJs(s) { return String(s || '').replace(/'/g, "\\'").replace(/"/g, '\\"'); }
-        async function safeJson(res) { try { return await res.json(); } catch (e) { return {}; } }
-
-        /* optional: refresh recent list if you have an element (not implemented here) */
-        function refreshRecentIfExists() {
-          // if you maintain a "recent" list, call /api/parcels and re-render it.
-        }
-
-        /* initialize report values on load */
-        window.addEventListener('load', () => {
-          const activeTab = document.querySelector('.tabBtn.active');
-          if (activeTab && activeTab.dataset.tab === 'reports') initReports();
-        });
-
-
-
-        async function startCamera() {
-
-          if (mainScanner) return
-
-          document.getElementById("cameraOverlay").classList.remove("hidden")
-
-          cameraLocked = false
-          mainScanner = new Html5Qrcode("reader")
-
-          try {
-
-            await mainScanner.start(
-              { facingMode: currentFacingMode },
-              { fps: 10, qrbox: 220 },
-              txt => {
-
-                if (cameraLocked) return
-                cameraLocked = true
-
-                handleScan(txt.trim())
-
-                setTimeout(stopCamera, 400)
               }
-            )
-
-          } catch (e) {
-
-            alert("เปิดกล้องไม่สำเร็จ")
-            mainScanner = null
-
-          }
-
-        }
-
-
-        function stopCamera() {
-          if (!mainScanner) return
-
-          mainScanner.stop().then(() => {
-            mainScanner.clear()
-            mainScanner = null
-            cameraLocked = false
-
-            document.getElementById("cameraOverlay").classList.add("hidden")
-          })
-        }
-
-        async function switchCamera() {
-
-          if (!mainScanner) return
-
-          currentFacingMode =
-            currentFacingMode === "environment"
-              ? "user"
-              : "environment"
-
-          try {
-
-            await mainScanner.stop()
-
-            await mainScanner.start(
-              { facingMode: currentFacingMode },
-              { fps: 10, qrbox: 220 },
-              txt => {
-
-                if (cameraLocked) return
-
-                cameraLocked = true
-
-                handleScan(txt.trim())
-
-                setTimeout(stopCamera, 400)
-
-              }
-            )
-
-          } catch (e) {
-
-            alert("สลับกล้องไม่สำเร็จ")
-
-          }
-
-        }
-
-
-        async function startCameraConfirm() {
-
-          if (confirmScanner || confirmStopping) return
-
-          const recipientInput =
-            document.getElementById('pendingRecipientInput')
-
-          if (!recipientInput || !recipientInput.value.trim()) {
-            openRecipientPopup()
-            return
-          }
-
-          document.getElementById("confirmCameraOverlay")
-            .classList.remove("hidden")
-
-          cameraLocked = false
-          setStatus('')
-
-          confirmScanner = new Html5Qrcode("confirmReader")
-
-          try {
-
-            await confirmScanner.start(
-              { facingMode: confirmFacingMode }, // ✅ ใช้แบบเดียวกับ mainCamera
-              {
-                fps: 10,
-                qrbox: 250
-              },
-              async txt => {
-
-                if (cameraLocked) return
-                cameraLocked = true
-
-                const scanned = normalizeTracking(txt)
-
-                if (
-                  pendingVerification &&
-                  scanned === pendingVerification.tracking
-                ) {
-
-                  const recipientToSend =
-                    recipientInput.value.trim()
-
-                  doConfirmPickup(scanned, recipientToSend)
-
-                } else {
-                  openMismatchPopup()
-                }
-
-                await stopConfirmCamera()
-
-              }
-            )
-
-          }
-          catch (err) {
-
-            alert("เปิดกล้องไม่สำเร็จ")
-            confirmScanner = null
-
-          }
-
-        }
-        async function stopConfirmCamera() {
-
-          if (!confirmScanner) return
-
-          confirmStopping = true
-
-          try {
-            await confirmScanner.stop()
-            confirmScanner.clear()
-          } catch { }
-
-          confirmScanner = null
-          cameraLocked = false
-          confirmStopping = false
-
-          document.getElementById("confirmCameraOverlay").classList.add("hidden")
-        }
-
-        async function switchConfirmCamera() {
-
-          if (!confirmScanner) return
-
-          confirmFacingMode =
-            confirmFacingMode === "environment"
-              ? "user"
-              : "environment"
-
-          await confirmScanner.stop()
-
-          confirmScanner = new Html5Qrcode("confirmReader")
-
-          await confirmScanner.start(
-            { facingMode: confirmFacingMode },
-            {
-              fps: 10,
-              qrbox: 250
-            },
-            async txt => {
-
-              if (cameraLocked) return
-              cameraLocked = true
-
-              const recipientInput =
-                document.getElementById('pendingRecipientInput')
-
-              const scanned = txt.trim()
-
-              if (
-                pendingVerification &&
-                scanned === pendingVerification.tracking
-              ) {
-
-                doConfirmPickup(
-                  scanned,
-                  recipientInput.value.trim()
-                )
-
-              } else {
-                openMismatchPopup()
-              }
-
-              await stopConfirmCamera()
-
-            }
-          )
-
-        }
-
-        /* popup helpers */
-        function showPopup(q, t) {
-          popupQueue.innerText = q || "-"
-          popupTracking.innerText = t || ""
-          queuePopup.classList.remove("hidden")
-          queuePopup.classList.add("flex")
-        }
-        function closePopup() {
-          queuePopup.classList.add("hidden")
-          queuePopup.classList.remove("flex")
-        }
-
-        function openPendingPopup() {
-          pendingPopup.classList.remove("hidden")
-          pendingPopup.classList.add("flex")
-
-          document.querySelectorAll(".modeBtn")
-            .forEach(b => b.classList.remove("activeMode"))
-
-          document.getElementById("manualConfirmBox").style.display = "none"
-        }
-
-        function closePendingPopup() {
-
-          if (confirmScanner) {
-            stopConfirmCamera()
-          }
-
-          pendingPopup.classList.add("hidden")
-          pendingPopup.classList.remove("flex")
-        }
-
-
-        function openAlreadyPopup() {
-          alreadyPopup.classList.remove("hidden")
-          alreadyPopup.classList.add("flex")
-        }
-
-        function closeAlreadyPopup() {
-          alreadyPopup.classList.add("hidden")
-          alreadyPopup.classList.remove("flex")
-        }
-        function openRecipientPopup() {
-          recipientPopup.classList.remove("hidden")
-          recipientPopup.classList.add("flex")
-        }
-
-        function closeRecipientPopup() {
-          recipientPopup.classList.add("hidden")
-          recipientPopup.classList.remove("flex")
-
-          const r = document.getElementById("pendingRecipientInput")
-          r?.focus()
-        }
-        function openMismatchPopup() {
-          mismatchPopup.classList.remove("hidden")
-          mismatchPopup.classList.add("flex")
-        }
-
-        function closeMismatchPopup() {
-          mismatchPopup.classList.add("hidden")
-          mismatchPopup.classList.remove("flex")
-
-          cameraLocked = false
-        }
-        function openNotFoundPopup() {
-          notFoundPopup.classList.remove("hidden")
-          notFoundPopup.classList.add("flex")
-        }
-
-        function closeNotFoundPopup() {
-          notFoundPopup.classList.add("hidden")
-          notFoundPopup.classList.remove("flex")
-        }
-
-        function showSuccessPopup(tracking, queue, recipient) {
-          const box = document.getElementById("successPopup")
-          const info = document.getElementById("successInfo")
-
-          info.innerHTML = `
- ${escapeHtml(tracking)}<br>
-เลขคิว: ${escapeHtml(queue || "-")}<br>
-ผู้รับ: ${escapeHtml(recipient || "-")}
-`
-
-          box.classList.remove("hidden")
-          box.classList.add("flex")
-        }
-
-        function closeSuccessPopup() {
-          const box = document.getElementById("successPopup")
-
-          box.classList.add("hidden")
-          box.classList.remove("flex")
-
-          loadWaitingParcels()
-          scanInput.focus()
-        }
-        function applyDateFilter() {
-
-          const queue = document.getElementById("queueSearch")?.value.trim() || "";
-          const date = document.getElementById("dateFilter")?.value || "";
-
-          let url = `/api/parcels/search?`;
-
-          if (queue) url += `q=${encodeURIComponent(queue)}&`;
-          if (date) url += `date=${date}`;
-
-          fetch(url)
-            .then(r => r.json())
-            .then(j => {
-              renderParcelList(j.items);
             });
-        }
+          }
 
+          function renderInsights(carrier_dist, peak_hours) {
+            // Doughnut Chart
+            const carrierCtx = document.getElementById('carrierChart').getContext('2d');
+            if (carrierChartInst) carrierChartInst.destroy();
+            
+            const carrierLabels = carrier_dist.map(d => d.label);
+            const carrierData = carrier_dist.map(d => d.value);
+            
+            carrierChartInst = new Chart(carrierCtx, {
+              type: 'doughnut',
+              data: {
+                labels: carrierLabels,
+                datasets: [{
+                  data: carrierData,
+                  backgroundColor: [
+                    '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'
+                  ],
+                  borderWidth: 2,
+                  borderColor: '#ffffff',
+                  hoverOffset: 4
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                  legend: {
+                    position: 'right',
+                    labels: {
+                      usePointStyle: true,
+                      font: { family: "'Noto Sans Thai Looped', sans-serif", size: 11 },
+                      padding: 15
+                    }
+                  },
+                  tooltip: {
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    titleColor: '#1e293b',
+                    bodyColor: '#334155',
+                    borderColor: '#e2e8f0',
+                    borderWidth: 1,
+                    padding: 10,
+                    usePointStyle: true,
+                    bodyFont: { family: "'Noto Sans Thai Looped', sans-serif", size: 12 }
+                  }
+                }
+              }
+            });
 
+            // Horizontal Bar Chart
+            const peakCtx = document.getElementById('peakChart').getContext('2d');
+            if (peakChartInst) peakChartInst.destroy();
 
-        function logout() {
-          fetch("/admin/logout", {
-            credentials: "include"
-          }).then(() => {
-            location.replace("/login_admin")   // 👈 replace ไม่ให้กดย้อน
-          })
-        }
+            const peakLabels = peak_hours.map(d => d.label);
+            const peakData = peak_hours.map(d => d.value);
 
-        async function loadWaitingParcels() {
+            peakChartInst = new Chart(peakCtx, {
+              type: 'bar',
+              data: {
+                labels: peakLabels,
+                datasets: [{
+                  label: 'จำนวนพัสดุ',
+                  data: peakData,
+                  backgroundColor: '#8b5cf6',
+                  borderRadius: 4,
+                  barPercentage: 0.5
+                }]
+              },
+              options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    titleColor: '#1e293b',
+                    bodyColor: '#334155',
+                    borderColor: '#e2e8f0',
+                    borderWidth: 1,
+                    padding: 10,
+                    titleFont: { family: "'Noto Sans Thai Looped', sans-serif", size: 13, weight: 'bold' },
+                    bodyFont: { family: "'Noto Sans Thai Looped', sans-serif", size: 12 }
+                  }
+                },
+                scales: {
+                  x: {
+                    grid: {
+                      color: '#f1f5f9',
+                      drawBorder: false,
+                      borderDash: [5, 5]
+                    },
+                    ticks: { font: { family: "'Noto Sans Thai Looped', sans-serif" }, color: '#64748b', precision: 0 },
+                    beginAtZero: true
+                  },
+                  y: {
+                    grid: { display: false },
+                    ticks: { font: { family: "'Noto Sans Thai Looped', sans-serif" }, color: '#64748b' }
+                  }
+                }
+              }
+            });
+          }
+
+          function loadWaitingParcels() {
           try {
 
             const status = document.getElementById("statusFilter")?.value;
