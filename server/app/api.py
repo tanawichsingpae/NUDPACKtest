@@ -1098,7 +1098,7 @@ def get_available_periods(period: str = Query("daily", regex="^(daily|monthly|ye
 
 @app.get("/api/reports/summary")
 def report_summary(
-    period: str = Query("daily", regex="^(daily|monthly|yearly)$"),
+    period: str = Query("daily", regex="^(daily|weekly|monthly|yearly)$"),
     start: Optional[str] = None,
     end: Optional[str] = None,
     admin = Depends(require_admin)
@@ -1116,17 +1116,20 @@ def report_summary(
             if not dt:
                 continue
 
+            date_str = dt.strftime("%Y%m%d")
+            if start and date_str < start:
+                continue
+            if end and date_str > end:
+                continue
+
             if period == "daily":
-                key = dt.strftime("%Y%m%d")
+                key = date_str
+            elif period == "weekly":
+                key = dt.strftime("%Y-W%W")
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
             else:
                 key = dt.strftime("%Y")
-
-            if start and key < start:
-                continue
-            if end and key > end:
-                continue
 
             checkin += 1
             if p.status == "ได้รับแล้ว":
@@ -1158,7 +1161,7 @@ def report_summary(
         db.close()
 
 @app.get("/api/reports/timeseries")
-def reports_timeseries(period: str = Query("daily", regex="^(daily|monthly|yearly)$"),
+def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|monthly|yearly)$"),
                        start: Optional[str] = None, end: Optional[str] = None, limit: int = 365,admin = Depends(require_admin)):
     db = SessionLocal()
     try:
@@ -1168,16 +1171,20 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|monthly|yearl
             dt = p.created_at
             if not dt:
                 continue
+            date_str = dt.strftime("%Y%m%d")
+            if start and date_str < start:
+                continue
+            if end and date_str > end:
+                continue
+                
             if period == "daily":
-                key = dt.strftime("%Y%m%d")
+                key = date_str
+            elif period == "weekly":
+                key = dt.strftime("%Y-W%W")
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
             else:
                 key = dt.strftime("%Y")
-            if start and key < start:
-                continue
-            if end and key > end:
-                continue
             if key not in agg:
                 agg[key] = {"checkin": 0, "checkout": 0}
             agg[key]["checkin"] += 1
@@ -1198,7 +1205,7 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|monthly|yearl
         db.close()
 
 @app.get("/api/reports/advanced_charts")
-def reports_advanced_charts(period: str = Query("daily", regex="^(daily|monthly|yearly)$"),
+def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|monthly|yearly)$"),
                        start: Optional[str] = None, end: Optional[str] = None, admin = Depends(require_admin)):
     db = SessionLocal()
     try:
@@ -1211,15 +1218,18 @@ def reports_advanced_charts(period: str = Query("daily", regex="^(daily|monthly|
         for p in rows:
             dt = p.created_at
             if not dt: continue
+            date_str = dt.strftime("%Y%m%d")
+            if start and date_str < start: continue
+            if end and date_str > end: continue
+
             if period == "daily":
-                key = dt.strftime("%Y%m%d")
+                key = date_str
+            elif period == "weekly":
+                key = dt.strftime("%Y-W%W")
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
             else:
                 key = dt.strftime("%Y")
-                
-            if start and key < start: continue
-            if end and key > end: continue
             
             checkin_total += 1
             cid = p.carrier_id
