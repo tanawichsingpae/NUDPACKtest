@@ -1252,19 +1252,14 @@ def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|d
             if p.status == "ได้รับแล้ว" and p.picked_up_at:
                 checkout_total += 1
                 pu = p.picked_up_at
-                # แปลงเป็นเวลาไทย (UTC+7)
-                tz_thai = timezone(timedelta(hours=7))
-                pu_thai = pu.astimezone(tz_thai) if pu.tzinfo else pu
-                # กรองวันตาม picked_up_at ให้ตรงกับ range ที่เลือก
-                pu_date_str = pu_thai.strftime("%Y%m%d")
-                if start and pu_date_str < start: continue
-                if end and pu_date_str > end: continue
-                hour = pu_thai.hour
-                hour_key = f"{hour:02d}:00-{hour+1:02d}:00"
-                if hour_key in peak_hours:
-                    peak_hours[hour_key] += 1
-                else:
-                    peak_hours[hour_key] = 1
+                # แปลงเป็นเวลาไทย (+7) เหมือน timeseries hourly
+                hour = pu.hour if pu.tzinfo else (pu + timedelta(hours=7)).hour
+                if 7 <= hour <= 20:
+                    hour_key = f"{hour:02d}:00-{hour+1:02d}:00"
+                    if hour_key in peak_hours:
+                        peak_hours[hour_key] += 1
+                    else:
+                        peak_hours[hour_key] = 1
 
         carriers = db.query(CarrierList).all()
         carrier_map = {c.carrier_id: c.carrier_name for c in carriers}
