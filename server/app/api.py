@@ -2190,19 +2190,47 @@ def dashboard_today(admin=Depends(require_admin)):
             AuditLog.timestamp >= today_start
         ).all()
         
-        unusual_audits = []
+        login_logouts = {}
+        deleted_parcels = {}
+        
         for a in today_audits:
             action = (a.action or "").lower()
-            if "login" in action or "logout" in action or "ลบ" in action or "delete" in action or "force" in action:
-                unusual_audits.append(a)
+            admin_user = a.user or "Unknown"
+            
+            # กรองเฉพาะที่เป็น Admin เพื่อความชัดเจน (กรณีที่ไม่ได้กำหนด user แต่อยากให้ชัวร์)
+            if "Admin: " in admin_user:
+                name = admin_user.replace("Admin: ", "").strip()
+            else:
+                name = admin_user
+                
+            if "login" in action or "logout" in action:
+                action_th = "เข้าสู่ระบบ" if "login" in action else "ออกจากระบบ"
+                if name not in login_logouts:
+                    login_logouts[name] = []
+                login_logouts[name].append(action_th)
+            elif "ลบ" in action or "delete" in action:
+                deleted_parcels[name] = deleted_parcels.get(name, 0) + 1
         
-        if unusual_audits:
+        # เพิ่มแจ้งเตือน Login/Logout
+        for name, acts in login_logouts.items():
+            logins = acts.count("เข้าสู่ระบบ")
+            logouts = acts.count("ออกจากระบบ")
             alerts.append({
                 "type": "critical",
                 "color": "red",
-                "icon": "policy",
-                "title": "ความเคลื่อนไหวสำคัญวันนี้",
-                "message": f"มีบันทึก Login/Logout/ลบ/อื่นๆ จำนวน {len(unusual_audits)} รายการ"
+                "icon": "admin_panel_settings",
+                "title": f"การเข้าใช้งานของ {name}",
+                "message": f"เข้าสู่ระบบ {logins} ครั้ง, ออกจากระบบ {logouts} ครั้ง ในวันนี้"
+            })
+            
+        # เพิ่มแจ้งเตือนการลบพัสดุ
+        for name, count in deleted_parcels.items():
+            alerts.append({
+                "type": "critical",
+                "color": "red",
+                "icon": "delete_forever",
+                "title": f"การลบข้อมูลโดย {name}",
+                "message": f"ทำการลบข้อมูลพัสดุจำนวน {count} รายการ ในวันนี้"
             })
 
         return {
