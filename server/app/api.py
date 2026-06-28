@@ -1252,8 +1252,12 @@ def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|d
             if p.status == "ได้รับแล้ว" and p.picked_up_at:
                 checkout_total += 1
                 pu = p.picked_up_at
-                # แปลงเป็นเวลาไทย (+7) เหมือน timeseries hourly
-                hour = pu.hour if pu.tzinfo else (pu + timedelta(hours=7)).hour
+                tz_thai = timezone(timedelta(hours=7))
+                # แปลงเป็นเวลาไทยก่อนดึง .hour เสมอ
+                if pu.tzinfo is not None:
+                    hour = pu.astimezone(tz_thai).hour
+                else:
+                    hour = (pu + timedelta(hours=7)).hour
                 if 7 <= hour <= 20:
                     hour_key = f"{hour:02d}:00-{hour+1:02d}:00"
                     if hour_key in peak_hours:
