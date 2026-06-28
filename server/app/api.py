@@ -147,6 +147,23 @@ def login_admin_alias(request: Request):
 
 @app.get("/admin/logout")
 def admin_logout(request: Request):
+    admin_data = request.session.get("admin")
+    if admin_data:
+        db = SessionLocal()
+        try:
+            write_audit(
+                db,
+                entity="System",
+                entity_id=0,
+                action="Admin Logout",
+                user=f"Admin: {admin_data.get('name', 'Unknown')}",
+                details="ผู้ดูแลระบบออกจากระบบ"
+            )
+            db.commit()
+        except Exception:
+            pass
+        finally:
+            db.close()
 
     request.session.clear()   # 👈 สำคัญสุด
 
@@ -195,6 +212,22 @@ def admin_login(payload: AdminLoginIn, request: Request):
     request.session["admin"] = {
         "name": payload.name
     }
+
+    db = SessionLocal()
+    try:
+        write_audit(
+            db,
+            entity="System",
+            entity_id=0,
+            action="Admin Login",
+            user=f"Admin: {payload.name}",
+            details="ผู้ดูแลระบบเข้าสู่ระบบ"
+        )
+        db.commit()
+    except Exception:
+        pass
+    finally:
+        db.close()
 
     return {"ok": True, "name": payload.name}
 
@@ -2104,6 +2137,74 @@ def dashboard_today(admin=Depends(require_admin)):
             Parcel.created_at <= cutoff_30
         ).scalar() or 0
 
+        # --- คำนวณ Alerts ---
+        alerts = []
+
+        # 🔴 แดง (Critical): พื้นที่จัดเก็บเต็ม
+        full_sections = [s for s in section_data if s["pct"] >= 100]
+        if full_sections:
+            count = len(full_sections)
+            alerts.append({
+                "type": "critical",
+                "color": "red",
+                "icon": "warning",
+                "title": "พื้นที่จัดเก็บเต็ม",
+                "message": f"มีพื้นที่จัดเก็บเต็ม 100% จำนวน {count} ช่อง"
+            })
+
+        # 🟠 ส้ม (Warning): พัสดุ "กำลังรอ" ค้างข้ามวัน
+        overnight_pending_count = db.query(sqlfunc.count(Parcel.id)).filter(
+            Parcel.status == "กำลังรอ",
+            Parcel.created_at < today_start
+        ).scalar() or 0
+        if overnight_pending_count > 0:
+            alerts.append({
+                "type": "warning",
+                "color": "orange",
+                "icon": "pending_actions",
+                "title": "พัสดุรอยืนยันค้างข้ามวัน",
+                "message": f"พบพัสดุ 'กำลังรอ' ค้างข้ามวัน {overnight_pending_count} ชิ้น",
+                "action": "force_confirm"
+            })
+
+        # 🔵 ฟ้า/เทา (Info): สรุปยอดเคลียร์ของเมื่อวาน
+        yesterday_start = today_start - timedelta(days=1)
+        yesterday_parcels = db.query(Parcel).filter(
+            Parcel.created_at >= yesterday_start,
+            Parcel.created_at < today_start
+        ).all()
+        y_total = len(yesterday_parcels)
+        y_waiting = sum(1 for p in yesterday_parcels if p.status != "ได้รับแล้ว")
+        
+        if y_total > 0:
+            alerts.append({
+                "type": "info",
+                "color": "blue",
+                "icon": "summarize",
+                "title": "สรุปยอดพัสดุเมื่อวาน",
+                "message": f"เมื่อวานเข้า {y_total} ชิ้น ยังไม่มีคนมารับ {y_waiting} ชิ้น"
+            })
+
+        # 🔴 แดง (Audit Log): ความเคลื่อนไหวผิดปกติวันนี้
+        today_audits = db.query(AuditLog).filter(
+            AuditLog.timestamp >= today_start
+        ).all()
+        
+        unusual_audits = []
+        for a in today_audits:
+            action = (a.action or "").lower()
+            if "login" in action or "logout" in action or "ลบ" in action or "delete" in action or "force" in action:
+                unusual_audits.append(a)
+        
+        if unusual_audits:
+            alerts.append({
+                "type": "critical",
+                "color": "red",
+                "icon": "policy",
+                "title": "ความเคลื่อนไหวสำคัญวันนี้",
+                "message": f"มีบันทึก Login/Logout/ลบ/อื่นๆ จำนวน {len(unusual_audits)} รายการ"
+            })
+
         return {
             "kpi": {
                 "total_in":   total_in,
@@ -2118,8 +2219,64 @@ def dashboard_today(admin=Depends(require_admin)):
             "carriers": carrier_data,
             "sections": section_data,
             "stranded_30d": stranded_count,
+            "alerts": alerts,
             "generated_at": now.isoformat()
         }
+    finally:
+        db.close()
+
+# ---------------------------
+# Force Confirm All Pending
+# ---------------------------
+@app.post("/api/dashboard/force_confirm_pending")
+def force_confirm_pending(request: Request, admin=Depends(require_admin)):
+    db = SessionLocal()
+    try:
+        admin_data = request.session.get("admin", {})
+        admin_name = admin_data.get("name", "Unknown Admin")
+        
+        pending_parcels = db.query(Parcel).filter(Parcel.status == "กำลังรอ").all()
+        if not pending_parcels:
+            return {"ok": True, "message": "ไม่มีพัสดุสถานะกำลังรอ", "count": 0}
+            
+        count = len(pending_parcels)
+        today = thai_now().strftime("%Y%m%d")
+        
+        for p in pending_parcels:
+            p.status = "ยังไม่ได้รับ"
+            
+            # Update reservation status to unlock sections if they are active
+            active_reservations = db.query(QueueReservation).filter(
+                QueueReservation.carrier_id == p.carrier_id,
+                QueueReservation.date == today,
+                QueueReservation.status == "active"
+            ).all()
+
+            for reservation in active_reservations:
+                if reservation.section_id == p.section_id:
+                    if reservation.current_seq >= reservation.end_seq:
+                        reservation.status = "full"
+                    else:
+                        reservation.status = "unactive"
+                else:
+                    reservation.status = "unactive"
+
+        db.commit()
+        
+        write_audit(
+            db,
+            entity="System",
+            entity_id=0,
+            action="Force Confirm Pending",
+            user=f"Admin: {admin_name}",
+            details=f"ยืนยันรับเข้าพัสดุสถานะกำลังรอทั้งหมด {count} ชิ้น"
+        )
+        db.commit()
+        
+        return {"ok": True, "count": count}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
 

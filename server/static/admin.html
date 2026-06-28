@@ -713,20 +713,13 @@ hover:bg-red-100 active:scale-95 transition">
         </div>
       </div>
 
-      <!-- ⑤ Shortcut พัสดุตกค้าง -->
+      <!-- ⑤ Alerts (แจ้งเตือน) -->
       <div>
         <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">แจ้งเตือน</p>
-        <button id="db-stranded-btn" onclick="goToStranded()" class="w-full flex items-center gap-3 bg-white border border-red-200
-                 rounded-xl px-4 py-3 shadow-sm hover:bg-red-50 transition text-left">
-          <div class="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined text-red-500 text-[18px]">warning</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="text-sm font-medium text-red-700">พัสดุตกค้าง &gt;30 วัน</div>
-            <div id="db-stranded-sub" class="text-xs text-gray-400 mt-0.5">กำลังโหลด...</div>
-          </div>
-          <span class="material-symbols-outlined text-gray-300 text-[18px]">chevron_right</span>
-        </button>
+        <div id="db-alerts-container" class="flex flex-col gap-3">
+          <!-- Dynamic Alerts go here -->
+          <div class="text-xs text-gray-400 text-center py-2">กำลังโหลด...</div>
+        </div>
       </div>
 
       <!-- timestamp -->
@@ -2260,19 +2253,62 @@ ${recipientHtml}
               }).join("");
             }
 
-            /* ⑤ Stranded shortcut */
-            const strandedSub = document.getElementById("db-stranded-sub");
-            if (strandedSub) {
-              strandedSub.textContent = d.stranded_30d > 0
-                ? `${d.stranded_30d} ชิ้น — แตะเพื่อดูรายการ`
-                : "ไม่มีพัสดุตกค้าง";
-            }
-            const strandedBtn = document.getElementById("db-stranded-btn");
-            if (strandedBtn) {
-              if (d.stranded_30d === 0) {
-                strandedBtn.classList.remove("border-red-200", "hover:bg-red-50");
-                strandedBtn.classList.add("border-gray-100", "hover:bg-gray-50");
+            /* ⑤ Alerts Injection */
+            const alertsContainer = document.getElementById("db-alerts-container");
+            if (alertsContainer) {
+              let alertsHtml = '';
+
+              // Static Stranded Alert
+              let sColor = d.stranded_30d > 0 ? "red" : "gray";
+              let sBg = d.stranded_30d > 0 ? "bg-red-50" : "bg-gray-50";
+              let sText = d.stranded_30d > 0 ? "text-red-500" : "text-gray-400";
+              let sTitle = d.stranded_30d > 0 ? "text-red-700" : "text-gray-600";
+              
+              alertsHtml += `
+                <button onclick="goToStranded()" class="w-full flex items-center gap-3 bg-white border border-${sColor}-200 rounded-xl px-4 py-3 shadow-sm hover:${sBg} transition text-left">
+                  <div class="w-9 h-9 rounded-lg ${sBg} flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined ${sText} text-[18px]">inventory_2</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium ${sTitle}">พัสดุตกค้าง &gt;30 วัน</div>
+                    <div class="text-xs text-gray-400 mt-0.5">${d.stranded_30d > 0 ? `${d.stranded_30d} ชิ้น — แตะเพื่อดูรายการ` : 'ไม่มีพัสดุตกค้าง'}</div>
+                  </div>
+                  <span class="material-symbols-outlined text-gray-300 text-[18px]">chevron_right</span>
+                </button>
+              `;
+
+              // Dynamic Alerts from API
+              if (d.alerts && d.alerts.length > 0) {
+                d.alerts.forEach(alert => {
+                  let bg = `bg-${alert.color}-50`;
+                  let text = `text-${alert.color}-500`;
+                  let titleColor = `text-${alert.color}-700`;
+                  let border = `border-${alert.color}-200`;
+                  
+                  let actionBtn = "";
+                  if (alert.action === "force_confirm") {
+                    actionBtn = `
+                      <button onclick="event.stopPropagation(); forceConfirmPending()" class="ml-auto bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg shadow-sm transition active:scale-95 whitespace-nowrap">
+                        ยืนยันทั้งหมด
+                      </button>
+                    `;
+                  }
+                  
+                  alertsHtml += `
+                    <div class="w-full flex items-center gap-3 bg-white border ${border} rounded-xl px-4 py-3 shadow-sm text-left">
+                      <div class="w-9 h-9 rounded-lg ${bg} flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined ${text} text-[18px]">${alert.icon || 'notifications'}</span>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium ${titleColor}">${alert.title}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">${alert.message}</div>
+                      </div>
+                      ${actionBtn}
+                    </div>
+                  `;
+                });
               }
+              alertsContainer.innerHTML = alertsHtml;
             }
 
             /* timestamp */
@@ -2289,6 +2325,25 @@ ${recipientHtml}
             });
             const updEl = document.getElementById("db-updated");
             if (updEl) updEl.textContent = `โหลดไม่สำเร็จ: ${err.message}`;
+          }
+        }
+
+        async function forceConfirmPending() {
+          if(!confirm("ยืนยันพัสดุสถานะ 'กำลังรอ' ทั้งหมดเป็น 'ยังไม่ได้รับ' ใช่หรือไม่?")) return;
+          try {
+            const res = await fetch("/api/dashboard/force_confirm_pending", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" }
+            });
+            const data = await res.json();
+            if (data.ok) {
+              alert(`สำเร็จ! ยืนยันพัสดุทั้งหมด ${data.count} ชิ้น`);
+              loadDashboard();
+            } else {
+              alert(data.message || "เกิดข้อผิดพลาด");
+            }
+          } catch(err) {
+            alert("Error: " + err.message);
           }
         }
 
