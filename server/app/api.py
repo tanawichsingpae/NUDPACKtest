@@ -1197,6 +1197,64 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|monthly|yearl
     finally:
         db.close()
 
+@app.get("/api/reports/advanced_charts")
+def reports_advanced_charts(period: str = Query("daily", regex="^(daily|monthly|yearly)$"),
+                       start: Optional[str] = None, end: Optional[str] = None, admin = Depends(require_admin)):
+    db = SessionLocal()
+    try:
+        rows = db.query(Parcel).order_by(Parcel.created_at).all()
+        carrier_counts = {}
+        peak_hours = {f"{h:02d}:00-{h+1:02d}:00": 0 for h in range(7, 20)}
+        checkin_total = 0
+        checkout_total = 0
+        
+        for p in rows:
+            dt = p.created_at
+            if not dt: continue
+            if period == "daily":
+                key = dt.strftime("%Y%m%d")
+            elif period == "monthly":
+                key = dt.strftime("%Y%m")
+            else:
+                key = dt.strftime("%Y")
+                
+            if start and key < start: continue
+            if end and key > end: continue
+            
+            checkin_total += 1
+            cid = p.carrier_id
+            if cid:
+                carrier_counts[cid] = carrier_counts.get(cid, 0) + 1
+                
+            if p.status == "ได้รับแล้ว" and p.picked_up_at:
+                checkout_total += 1
+                hour = p.picked_up_at.hour
+                hour_key = f"{hour:02d}:00-{hour+1:02d}:00"
+                if hour_key in peak_hours:
+                    peak_hours[hour_key] += 1
+                else:
+                    peak_hours[hour_key] = 1
+
+        carriers = db.query(CarrierList).all()
+        carrier_map = {c.carrier_id: c.carrier_name for c in carriers}
+        
+        doughnut_labels = []
+        doughnut_data = []
+        for cid, count in carrier_counts.items():
+            doughnut_labels.append(carrier_map.get(cid, f"Carrier {cid}"))
+            doughnut_data.append(count)
+            
+        peak_labels = list(peak_hours.keys())
+        peak_data = list(peak_hours.values())
+        
+        return {
+            "doughnut": {"labels": doughnut_labels, "data": doughnut_data},
+            "peak_hours": {"labels": peak_labels, "data": peak_data},
+            "gauge": {"checkin": checkin_total, "checkout": checkout_total}
+        }
+    finally:
+        db.close()
+
 @app.get("/api/reports/stranded")
 def stranded_parcels(
     days: int = Query(180, ge=1),
