@@ -1251,7 +1251,13 @@ def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|d
             if p.status == "ได้รับแล้ว" and p.picked_up_at:
                 checkout_total += 1
                 pu = p.picked_up_at
-                hour = (pu + timedelta(hours=7)).hour if pu.tzinfo else pu.hour
+                # แปลงเป็นเวลาไทย (UTC+7)
+                pu_thai = pu + timedelta(hours=7) if pu.tzinfo else pu
+                # กรองวันตาม picked_up_at ให้ตรงกับ range ที่เลือก
+                pu_date_str = pu_thai.strftime("%Y%m%d")
+                if start and pu_date_str < start: continue
+                if end and pu_date_str > end: continue
+                hour = pu_thai.hour
                 hour_key = f"{hour:02d}:00-{hour+1:02d}:00"
                 if hour_key in peak_hours:
                     peak_hours[hour_key] += 1
