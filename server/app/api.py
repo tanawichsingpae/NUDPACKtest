@@ -1250,7 +1250,8 @@ def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|d
                 
             if p.status == "ได้รับแล้ว" and p.picked_up_at:
                 checkout_total += 1
-                hour = p.picked_up_at.hour
+                pu = p.picked_up_at
+                hour = (pu + timedelta(hours=7)).hour if pu.tzinfo else pu.hour
                 hour_key = f"{hour:02d}:00-{hour+1:02d}:00"
                 if hour_key in peak_hours:
                     peak_hours[hour_key] += 1
