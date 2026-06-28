@@ -2279,5 +2279,4 @@ def force_confirm_pending(request: Request, admin=Depends(require_admin)):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
-
 # EOF
