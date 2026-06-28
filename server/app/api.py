@@ -1188,7 +1188,8 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|dayofw
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
             elif period == "hourly":
-                h = (dt + timedelta(hours=7)).hour if dt.tzinfo else dt.hour
+                tz_thai = timezone(timedelta(hours=7))
+                h = dt.astimezone(tz_thai).hour if dt.tzinfo else dt.hour
                 if 7 <= h <= 20:
                     key = f"{h:02d}:00"
                 else:
@@ -1252,7 +1253,8 @@ def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|d
                 checkout_total += 1
                 pu = p.picked_up_at
                 # แปลงเป็นเวลาไทย (UTC+7)
-                pu_thai = pu + timedelta(hours=7) if pu.tzinfo else pu
+                tz_thai = timezone(timedelta(hours=7))
+                pu_thai = pu.astimezone(tz_thai) if pu.tzinfo else pu
                 # กรองวันตาม picked_up_at ให้ตรงกับ range ที่เลือก
                 pu_date_str = pu_thai.strftime("%Y%m%d")
                 if start and pu_date_str < start: continue
