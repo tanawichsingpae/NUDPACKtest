@@ -1163,7 +1163,7 @@ def report_summary(
         db.close()
 
 @app.get("/api/reports/timeseries")
-def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|dayofweek|monthly|yearly)$"),
+def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|dayofweek|monthly|yearly|hourly)$"),
                        start: Optional[str] = None, end: Optional[str] = None, limit: int = 365,admin = Depends(require_admin)):
     db = SessionLocal()
     try:
@@ -1187,6 +1187,12 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|dayofw
                 key = str(dt.weekday())
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
+            elif period == "hourly":
+                h = dt.hour if dt.tzinfo else (dt + timedelta(hours=7)).hour
+                if 7 <= h <= 20:
+                    key = f"{h:02d}:00"
+                else:
+                    continue
             else:
                 key = dt.strftime("%Y")
             if key not in agg:

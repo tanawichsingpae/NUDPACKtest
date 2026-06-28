@@ -781,7 +781,20 @@ hover:bg-red-100 active:scale-95 transition">
       <div id="summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"> </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-6">
-        <h3 class="font-semibold text-slate-700 mb-4 text-sm">สถิติพัสดุเข้า-ออกรวม (ตามวันในสัปดาห์)</h3>
+        <div class="flex items-center justify-between mb-4">
+          <h3 id="summaryChartTitle" class="font-semibold text-slate-700 text-sm">
+            สถิติพัสดุเข้า-ออก (วันนี้ รายชั่วโมง)
+          </h3>
+          <select id="chartModeSelect" onchange="onChartModeChange()"
+            class="appearance-none rounded-xl border border-gray-200 bg-white
+                   px-3 py-1.5 text-xs font-medium text-gray-600
+                   shadow-sm transition hover:border-orange-300
+                   focus:outline-none focus:ring-2 focus:ring-orange-400">
+            <option value="today" selected>วันนี้ (รายชั่วโมง)</option>
+            <option value="week">สัปดาห์นี้</option>
+            <option value="custom">ตามช่วงที่เลือก</option>
+          </select>
+        </div>
         <canvas id="summaryChart" height="100"></canvas>
       </div>
 
@@ -1493,13 +1506,13 @@ hover:bg-red-100 active:scale-95 transition">
 `;
 
           const tres = await fetch(
-            `/api/reports/timeseries?period=dayofweek&start=${start}&end=${end}`,
+            `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
             { credentials: "include" }
           );
 
           const tdata = await tres.json();
 
-          renderChart(tdata.labels, tdata.checkin, tdata.checkout, 'dayofweek');
+          await loadSummaryChart();
           renderAdvancedCharts(tdata.labels, tdata.checkin, tdata.checkout, adata, 'dayofweek');
         }
 
@@ -1628,6 +1641,7 @@ hover:bg-red-100 active:scale-95 transition">
 
         function renderChart(labels, checkin, checkout, period) {
           const formattedLabels = labels.map(l => {
+            if (period === 'hourly') return l;
             if (period === 'daily' && l.length === 8) return `${l.slice(6, 8)}/${l.slice(4, 6)}/${l.slice(0, 4)}`;
             if (period === 'weekly' && l.includes('-W')) {
               const [y, w] = l.split('-W');
@@ -1698,6 +1712,71 @@ hover:bg-red-100 active:scale-95 transition">
           });
         }
         
+        /* ============================================================
+           Chart Mode Switcher
+        ============================================================ */
+
+        async function onChartModeChange() {
+          await loadSummaryChart();
+        }
+
+        async function loadSummaryChart() {
+          const mode = document.getElementById("chartModeSelect")?.value || "today";
+          const titleEl = document.getElementById("summaryChartTitle");
+
+          if (mode === "today") {
+            const now = new Date();
+            const thai = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+            const dd = String(thai.getDate()).padStart(2, "0");
+            const mm = String(thai.getMonth() + 1).padStart(2, "0");
+            const yyyy = thai.getFullYear();
+            const todayStr = `${yyyy}${mm}${dd}`;
+
+            const res = await fetch(
+              `/api/reports/timeseries?period=hourly&start=${todayStr}&end=${todayStr}`,
+              { credentials: "include" }
+            );
+            const data = await res.json();
+            if (titleEl) titleEl.textContent = "สถิติพัสดุเข้า-ออก (วันนี้ รายชั่วโมง)";
+            renderChart(data.labels, data.checkin, data.checkout, "hourly");
+
+          } else if (mode === "week") {
+            const now = new Date();
+            const thai = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+            const dow = thai.getDay();
+            const diffToMon = (dow === 0 ? -6 : 1 - dow);
+            const monday = new Date(thai);
+            monday.setDate(thai.getDate() + diffToMon);
+
+            const fmt = d => {
+              const dd = String(d.getDate()).padStart(2, "0");
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              return `${d.getFullYear()}${mm}${dd}`;
+            };
+
+            const res = await fetch(
+              `/api/reports/timeseries?period=dayofweek&start=${fmt(monday)}&end=${fmt(thai)}`,
+              { credentials: "include" }
+            );
+            const data = await res.json();
+            if (titleEl) titleEl.textContent = "สถิติพัสดุเข้า-ออก (สัปดาห์นี้)";
+            renderChart(data.labels, data.checkin, data.checkout, "dayofweek");
+
+          } else {
+            const start = unslash(document.getElementById("r_start").value);
+            const end = unslash(document.getElementById("r_end").value);
+            if (!start || !end) return;
+
+            const res = await fetch(
+              `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
+              { credentials: "include" }
+            );
+            const data = await res.json();
+            if (titleEl) titleEl.textContent = "สถิติพัสดุเข้า-ออก (ตามช่วงที่เลือก)";
+            renderChart(data.labels, data.checkin, data.checkout, "daily");
+          }
+        }
+
         function renderAdvancedCharts(labels, checkin, checkout, adata, period) {
           const formattedLabels = labels.map(l => {
             if (period === 'daily' && l.length === 8) return `${l.slice(6, 8)}/${l.slice(4, 6)}/${l.slice(0, 4)}`;
