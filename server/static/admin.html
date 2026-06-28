@@ -1454,7 +1454,7 @@ hover:bg-red-100 active:scale-95 transition">
           renderReportTable(currentReportData);
 
           const ares = await fetch(
-            `/api/reports/advanced_charts?period=dayofweek&start=${start}&end=${end}`,
+            `/api/reports/advanced_charts?period=daily&start=${start}&end=${end}`,
             { credentials: "include" }
           );
           const adata = await ares.json();
@@ -1513,7 +1513,7 @@ hover:bg-red-100 active:scale-95 transition">
           const tdata = await tres.json();
 
           await loadSummaryChart();
-          renderAdvancedCharts(tdata.labels, tdata.checkin, tdata.checkout, adata, 'dayofweek');
+          await renderAdvancedCharts(tdata.labels, tdata.checkin, tdata.checkout, adata, start, end);
         }
 
         /* ---------- table ---------- */
@@ -1777,7 +1777,8 @@ hover:bg-red-100 active:scale-95 transition">
           }
         }
 
-        function renderAdvancedCharts(labels, checkin, checkout, adata, period) {
+        async function renderAdvancedCharts(labels, checkin, checkout, adata, start, end) {
+          const period = 'daily';
           const formattedLabels = labels.map(l => {
             if (period === 'daily' && l.length === 8) return `${l.slice(6, 8)}/${l.slice(4, 6)}/${l.slice(0, 4)}`;
             if (period === 'weekly' && l.includes('-W')) {
@@ -1844,7 +1845,23 @@ hover:bg-red-100 active:scale-95 transition">
             }
           });
 
-          // Horizontal Bar Chart (Peak Hours)
+          // Horizontal Bar Chart (Peak Hours) — ดึงจาก timeseries hourly เพื่อความถูกต้อง
+          try {
+            const phRes = await fetch(
+              `/api/reports/timeseries?period=hourly&start=${start}&end=${end}`,
+              { credentials: "include" }
+            );
+            const phData = await phRes.json();
+            // แปลง "07:00" → "07:00-08:00" ให้ตรงกับ format label เดิม
+            adata.peak_hours = {
+              labels: phData.labels.map(l => {
+                const h = parseInt(l);
+                return `${String(h).padStart(2, "0")}:00-${String(h + 1).padStart(2, "0")}:00`;
+              }),
+              data: phData.checkout
+            };
+          } catch (e) { /* fallback ใช้ adata.peak_hours เดิมถ้า fetch ล้มเหลว */ }
+
           const ctxPeak = document.getElementById('peakHoursChart').getContext('2d');
           if (peakChartInst) peakChartInst.destroy();
           peakChartInst = new Chart(ctxPeak, {
