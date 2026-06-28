@@ -1829,7 +1829,16 @@ hover:bg-red-100 active:scale-95 transition">
               labels: adata.doughnut.labels,
               datasets: [{
                 data: adata.doughnut.data,
-                backgroundColor: ['#f97316', '#3b82f6', '#10b981', '#eab308', '#8b5cf6', '#ec4899', '#64748b'],
+                backgroundColor: adata.doughnut.labels.map(label => {
+                  const n = label.toLowerCase();
+                  if (n.includes('flash')) return '#fde047'; // เหลืองอ่อน
+                  if (n.includes('j&t')) return '#ef4444';   // แดง
+                  if (n.includes('spx')) return '#ea580c';   // ส้มเข้ม
+                  if (n.includes('dhl')) return '#eab308';   // เหลืองเข้ม
+                  if (n.includes('kex') || n.includes('kerry')) return '#fb923c'; // ส้มอ่อน
+                  if (n.includes('lazada') || n.includes('lex')) return '#a855f7'; // ม่วง
+                  return '#94a3b8'; // อื่นๆ (เทา)
+                }),
                 borderWidth: 2,
                 borderColor: '#ffffff',
                 hoverOffset: 4
