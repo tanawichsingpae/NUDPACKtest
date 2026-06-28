@@ -1881,6 +1881,10 @@ def list_audit_logs(
         except Exception:
             pass
 
+    # ถ้าค้นหาตามวันที่ ให้แสดงทั้งหมด (ไม่ limit)
+    if date:
+        limit = None
+
     logs = (
         query
         .order_by(AuditLog.timestamp.desc())
