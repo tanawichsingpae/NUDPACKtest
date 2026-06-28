@@ -781,7 +781,7 @@ hover:bg-red-100 active:scale-95 transition">
       <div id="summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"> </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-6">
-        <h3 class="font-semibold text-slate-700 mb-4 text-sm">สถิติพัสดุเข้า-ออกรวม (รายสัปดาห์)</h3>
+        <h3 class="font-semibold text-slate-700 mb-4 text-sm">สถิติพัสดุเข้า-ออกรวม (ตามวันในสัปดาห์)</h3>
         <canvas id="summaryChart" height="100"></canvas>
       </div>
 
@@ -1441,7 +1441,7 @@ hover:bg-red-100 active:scale-95 transition">
           renderReportTable(currentReportData);
 
           const ares = await fetch(
-            `/api/reports/advanced_charts?period=weekly&start=${start}&end=${end}`,
+            `/api/reports/advanced_charts?period=dayofweek&start=${start}&end=${end}`,
             { credentials: "include" }
           );
           const adata = await ares.json();
@@ -1493,14 +1493,14 @@ hover:bg-red-100 active:scale-95 transition">
 `;
 
           const tres = await fetch(
-            `/api/reports/timeseries?period=weekly&start=${start}&end=${end}`,
+            `/api/reports/timeseries?period=dayofweek&start=${start}&end=${end}`,
             { credentials: "include" }
           );
 
           const tdata = await tres.json();
 
-          renderChart(tdata.labels, tdata.checkin, tdata.checkout, 'weekly');
-          renderAdvancedCharts(tdata.labels, tdata.checkin, tdata.checkout, adata, 'weekly');
+          renderChart(tdata.labels, tdata.checkin, tdata.checkout, 'dayofweek');
+          renderAdvancedCharts(tdata.labels, tdata.checkin, tdata.checkout, adata, 'dayofweek');
         }
 
         /* ---------- table ---------- */
@@ -1633,6 +1633,10 @@ hover:bg-red-100 active:scale-95 transition">
               const [y, w] = l.split('-W');
               return `สัปดาห์ที่ ${w}/${y}`;
             }
+            if (period === 'dayofweek') {
+              const days = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+              return days[parseInt(l)] || l;
+            }
             if (period === 'monthly' && l.length === 6) return `${l.slice(4, 6)}/${l.slice(0, 4)}`;
             return l;
           });
@@ -1700,6 +1704,10 @@ hover:bg-red-100 active:scale-95 transition">
             if (period === 'weekly' && l.includes('-W')) {
               const [y, w] = l.split('-W');
               return `สัปดาห์ที่ ${w}/${y}`;
+            }
+            if (period === 'dayofweek') {
+              const days = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+              return days[parseInt(l)] || l;
             }
             if (period === 'monthly' && l.length === 6) return `${l.slice(4, 6)}/${l.slice(0, 4)}`;
             return l;

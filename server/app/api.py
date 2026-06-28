@@ -1098,7 +1098,7 @@ def get_available_periods(period: str = Query("daily", regex="^(daily|monthly|ye
 
 @app.get("/api/reports/summary")
 def report_summary(
-    period: str = Query("daily", regex="^(daily|weekly|monthly|yearly)$"),
+    period: str = Query("daily", regex="^(daily|weekly|dayofweek|monthly|yearly)$"),
     start: Optional[str] = None,
     end: Optional[str] = None,
     admin = Depends(require_admin)
@@ -1126,6 +1126,8 @@ def report_summary(
                 key = date_str
             elif period == "weekly":
                 key = dt.strftime("%Y-W%W")
+            elif period == "dayofweek":
+                key = str(dt.weekday())
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
             else:
@@ -1161,7 +1163,7 @@ def report_summary(
         db.close()
 
 @app.get("/api/reports/timeseries")
-def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|monthly|yearly)$"),
+def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|dayofweek|monthly|yearly)$"),
                        start: Optional[str] = None, end: Optional[str] = None, limit: int = 365,admin = Depends(require_admin)):
     db = SessionLocal()
     try:
@@ -1181,6 +1183,8 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|monthl
                 key = date_str
             elif period == "weekly":
                 key = dt.strftime("%Y-W%W")
+            elif period == "dayofweek":
+                key = str(dt.weekday())
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
             else:
@@ -1205,7 +1209,7 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|monthl
         db.close()
 
 @app.get("/api/reports/advanced_charts")
-def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|monthly|yearly)$"),
+def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|dayofweek|monthly|yearly)$"),
                        start: Optional[str] = None, end: Optional[str] = None, admin = Depends(require_admin)):
     db = SessionLocal()
     try:
@@ -1226,6 +1230,8 @@ def reports_advanced_charts(period: str = Query("daily", regex="^(daily|weekly|m
                 key = date_str
             elif period == "weekly":
                 key = dt.strftime("%Y-W%W")
+            elif period == "dayofweek":
+                key = str(dt.weekday())
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
             else:
