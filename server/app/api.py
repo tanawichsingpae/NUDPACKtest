@@ -1188,7 +1188,7 @@ def reports_timeseries(period: str = Query("daily", regex="^(daily|weekly|dayofw
             elif period == "monthly":
                 key = dt.strftime("%Y%m")
             elif period == "hourly":
-                h = dt.hour if dt.tzinfo else (dt + timedelta(hours=7)).hour
+                h = (dt + timedelta(hours=7)).hour if dt.tzinfo else dt.hour
                 if 7 <= h <= 20:
                     key = f"{h:02d}:00"
                 else:
