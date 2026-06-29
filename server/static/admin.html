@@ -167,6 +167,20 @@ hover:bg-red-100 active:scale-95 transition">
               </span>
               พัสดุตกค้าง
             </button>
+
+            <!-- เส้นคั่น -->
+            <div class="h-px bg-gray-100 my-1"></div>
+
+            <!-- Hold List -->
+            <button onclick="openHoldListPage()" class="flex items-center gap-3 w-full
+           px-4 py-3 text-sm font-medium text-gray-700
+           hover:bg-orange-50 hover:text-orange-600
+           transition duration-150">
+              <span class="material-symbols-outlined text-[18px]">
+                inventory
+              </span>
+              Hold List
+            </button>
           </div>
 
         </div>
@@ -239,12 +253,14 @@ hover:bg-red-100 active:scale-95 transition">
         <input id="recipientSearch" placeholder="ค้นหาชื่อหน้ากล่อง" class="border px-3 py-2 rounded-xl text-sm w-32">
 
         <!-- search button -->
-        <input id="dateFilter" type="date" class="hidden">
-
-        <button type="button" onclick="openCalendar()"
-          class="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-xl text-sm shadow">
-          ค้นหา
-        </button>
+        <div class="relative">
+          <input id="dateFilter" type="date" onchange="loadWaitingParcels()"
+            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+          <div
+            class="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-xl text-sm shadow pointer-events-none">
+            ค้นหา
+          </div>
+        </div>
 
       </div>
 
@@ -580,13 +596,23 @@ hover:bg-red-100 active:scale-95 transition">
         <h1 class="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800">
           พัสดุตกค้าง
         </h1>
-        <!-- Export button (right side) -->
-        <button onclick="exportStrandedParcels()" class="ml-auto flex items-center gap-1 bg-orange-500 hover:bg-orange-600
-                 active:scale-95 transition text-white text-sm font-medium
-                 px-3 py-2 rounded-xl shadow">
-          <span class="material-symbols-outlined text-[18px]">download</span>
-          Excel
-        </button>
+        <div class="ml-auto flex items-center gap-2">
+          <!-- Add to Hold List button -->
+          <button id="addToHoldBtn" onclick="addStrandedToHold()" hidden
+                  class="flex items-center gap-1 bg-amber-500 hover:bg-amber-600
+                         active:scale-95 transition text-white text-xs font-medium
+                         px-3 py-2 rounded-xl shadow">
+            <span class="material-symbols-outlined text-[16px]">inventory</span>
+            เพิ่มเข้า Hold List
+          </button>
+          <!-- Export button -->
+          <button onclick="exportStrandedParcels()" class="flex items-center gap-1 bg-orange-500 hover:bg-orange-600
+                   active:scale-95 transition text-white text-sm font-medium
+                   px-3 py-2 rounded-xl shadow">
+            <span class="material-symbols-outlined text-[18px]">download</span>
+            Excel
+          </button>
+        </div>
       </div>
     </header>
 
@@ -620,12 +646,64 @@ hover:bg-red-100 active:scale-95 transition">
       <!-- Summary card -->
       <div id="strandedSummary" class="mb-4"></div>
 
+      <!-- Select-all checkbox row (shown after load) -->
+      <div id="strandedSelectBar" class="hidden flex items-center gap-2 mb-3">
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" id="strandedSelectAll" onchange="toggleSelectAllStranded(this.checked)"
+                 class="w-4 h-4 accent-amber-500 rounded">
+          เลือกทั้งหมด
+        </label>
+        <span id="strandedSelectedCount" class="text-xs text-amber-600 font-medium"></span>
+      </div>
+
       <!-- List grouped by date -->
       <div id="strandedList"></div>
 
     </div>
   </div>
   <!-- ================= /Stranded Page ================= -->
+
+  <!-- ================= Hold List Page ================= -->
+  <div id="holdListPage" class="fixed inset-0 bg-[#fafafa] hidden overflow-y-auto z-50">
+
+    <header class="sticky top-0 bg-white border-b p-4 z-30">
+      <div class="max-w-xl mx-auto relative flex items-center">
+        <button onclick="closeHoldListPage()" class="size-9 rounded-full bg-slate-100
+             flex items-center justify-center
+             hover:bg-slate-200 transition">
+          <span class="material-symbols-outlined text-slate-700">arrow_back</span>
+        </button>
+        <h1 class="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800">
+          Hold List
+        </h1>
+        <button onclick="refreshHoldList()" class="ml-auto size-9 rounded-full bg-slate-100
+                 flex items-center justify-center hover:bg-slate-200 transition">
+          <span class="material-symbols-outlined text-slate-600 text-[18px]">refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="max-w-xl mx-auto p-4">
+
+      <!-- Summary card -->
+      <div id="holdSummary" class="mb-4"></div>
+
+      <!-- Delete unreceived button -->
+      <div id="holdDeleteBar" class="hidden mb-4">
+        <button onclick="deleteUnreceivedHold()" class="flex items-center gap-2 w-full justify-center
+                 bg-red-500 hover:bg-red-600 active:scale-95 transition
+                 text-white text-sm font-medium px-4 py-3 rounded-xl shadow">
+          <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+          ลบรายการที่ยังไม่รับ
+        </button>
+      </div>
+
+      <!-- List -->
+      <div id="holdList"></div>
+
+    </div>
+  </div>
+  <!-- ================= /Hold List Page ================= -->
 
   <!-- ================= Dashboard Page ================= -->
   <div id="dashboardPage" class="fixed inset-0 bg-[#fafafa] hidden overflow-y-auto z-50">
@@ -785,8 +863,7 @@ hover:bg-red-100 active:scale-95 transition">
           <h3 id="summaryChartTitle" class="font-semibold text-slate-700 text-sm">
             สถิติพัสดุเข้า-ออก (วันนี้ รายชั่วโมง)
           </h3>
-          <select id="chartModeSelect" onchange="onChartModeChange()"
-            class="appearance-none rounded-xl border border-gray-200 bg-white
+          <select id="chartModeSelect" onchange="onChartModeChange()" class="appearance-none rounded-xl border border-gray-200 bg-white
                    px-3 py-1.5 text-xs font-medium text-gray-600 min-w-[140px]
                    shadow-sm transition hover:border-orange-300
                    focus:outline-none focus:ring-2 focus:ring-orange-400">
@@ -1663,7 +1740,7 @@ hover:bg-red-100 active:scale-95 transition">
           const orangeGrad = ctx.createLinearGradient(0, 0, 0, 180);
           orangeGrad.addColorStop(0, 'rgba(249,115,22,0.25)');
           orangeGrad.addColorStop(1, 'rgba(249,115,22,0)');
-          
+
           chartInst = new Chart(ctx, {
             type: 'line',
             data: {
@@ -1704,14 +1781,14 @@ hover:bg-red-100 active:scale-95 transition">
                 legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 12, font: { size: 11 } } },
                 tooltip: { backgroundColor: 'rgba(255, 255, 255, 0.95)', titleColor: '#1e293b', bodyColor: '#475569', borderColor: '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8, boxPadding: 6, usePointStyle: true }
               },
-              scales: { 
+              scales: {
                 x: { grid: { display: false } },
-                y: { beginAtZero: true, border: { display: false }, grid: { borderDash: [5, 5], color: '#f1f5f9' } } 
+                y: { beginAtZero: true, border: { display: false }, grid: { borderDash: [5, 5], color: '#f1f5f9' } }
               }
             }
           });
         }
-        
+
         /* ============================================================
            Chart Mode Switcher
         ============================================================ */
@@ -1813,9 +1890,9 @@ hover:bg-red-100 active:scale-95 transition">
                 legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', padding: 12, font: { size: 11 } } },
                 tooltip: { backgroundColor: 'rgba(255, 255, 255, 0.95)', titleColor: '#1e293b', bodyColor: '#475569', borderColor: '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8, boxPadding: 6, usePointStyle: true }
               },
-              scales: { 
+              scales: {
                 x: { grid: { display: false } },
-                y: { beginAtZero: true, border: { display: false }, grid: { borderDash: [5, 5], color: '#f1f5f9' } } 
+                y: { beginAtZero: true, border: { display: false }, grid: { borderDash: [5, 5], color: '#f1f5f9' } }
               }
             }
           });
@@ -1892,7 +1969,7 @@ hover:bg-red-100 active:scale-95 transition">
                 legend: { display: false },
                 tooltip: { backgroundColor: 'rgba(255, 255, 255, 0.95)', titleColor: '#1e293b', bodyColor: '#475569', borderColor: '#e2e8f0', borderWidth: 1, padding: 12, cornerRadius: 8 }
               },
-              scales: { 
+              scales: {
                 x: { beginAtZero: true, border: { display: false }, grid: { borderDash: [5, 5], color: '#f1f5f9' } },
                 y: { grid: { display: false }, ticks: { font: { size: 10 } } }
               }
@@ -2670,14 +2747,25 @@ ${recipientHtml}
                 </div>
               </div>`;
 
+            // show/hide select bar & hold button
+            const selectBar = document.getElementById("strandedSelectBar");
+            const addHoldBtn = document.getElementById("addToHoldBtn");
             if (data.total === 0) {
               listEl.innerHTML = `
                 <div class="text-center text-gray-400 text-sm py-10">
                   <span class="material-symbols-outlined text-[40px] block mb-2">inventory_2</span>
                   ไม่มีพัสดุตกค้าง
                 </div>`;
+              selectBar.classList.add("hidden");
+              addHoldBtn.hidden = true;
               return;
             }
+
+            selectBar.classList.remove("hidden");
+            addHoldBtn.hidden = false;
+            // reset select-all
+            document.getElementById("strandedSelectAll").checked = false;
+            updateStrandedSelectedCount();
 
             // --- Grouped by date ---
             const html = data.groups.map(group => {
@@ -2695,24 +2783,31 @@ ${recipientHtml}
                 const name = p.unofficial_recipient || p.recipient_name || "-";
 
                 return `
-                  <div class="bg-white rounded-xl border border-gray-100 px-4 py-3 flex flex-col gap-1 shadow-sm">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-mono text-gray-700 break-all">${escapeHtml(p.tracking_number)}</span>
-                      <span class="text-xs px-2 py-0.5 rounded-full font-medium ${badgeCls} ml-2 whitespace-nowrap">
-                        ${p.days_stranded} วัน
-                      </span>
-                    </div>
-                    <!-- ชื่อหน้ากล่อง highlight -->
-                    <div class="flex items-center gap-1.5">
-                      <span class="material-symbols-outlined text-purple-400 text-[15px]">badge</span>
-                      ${name !== "-"
-                    ? `<span class="text-sm font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">${escapeHtml(name)}</span>`
-                    : `<span class="text-xs text-gray-400 italic">ไม่ระบุชื่อ</span>`
-                  }
-                    </div>
-                    <div class="flex gap-4 text-xs text-gray-500">
-                      <span>เลขคิว <span class="font-semibold text-gray-700">${escapeHtml(p.queue_number ?? "-")}</span></span>
-                      <span>เข้าเมื่อ: <span class="font-semibold text-gray-700">${formatThaiDate(p.created_at)}</span></span>
+                  <div class="bg-white rounded-xl border border-gray-100 px-4 py-3 flex gap-3 shadow-sm stranded-card" data-id="${p.id}">
+                    <!-- checkbox -->
+                    <label class="flex items-start pt-1 cursor-pointer">
+                      <input type="checkbox" class="stranded-cb w-4 h-4 accent-amber-500 rounded" value="${p.id}"
+                             onchange="onStrandedCbChange()">
+                    </label>
+                    <div class="flex-1 flex flex-col gap-1">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-mono text-gray-700 break-all">${escapeHtml(p.tracking_number)}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium ${badgeCls} ml-2 whitespace-nowrap">
+                          ${p.days_stranded} วัน
+                        </span>
+                      </div>
+                      <!-- ชื่อหน้ากล่อง highlight -->
+                      <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-purple-400 text-[15px]">badge</span>
+                        ${name !== "-"
+                      ? `<span class="text-sm font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">${escapeHtml(name)}</span>`
+                      : `<span class="text-xs text-gray-400 italic">ไม่ระบุชื่อ</span>`
+                    }
+                      </div>
+                      <div class="flex gap-4 text-xs text-gray-500">
+                        <span>เลขคิว <span class="font-semibold text-gray-700">${escapeHtml(p.queue_number ?? "-")}</span></span>
+                        <span>เข้าเมื่อ: <span class="font-semibold text-gray-700">${formatThaiDate(p.created_at)}</span></span>
+                      </div>
                     </div>
                   </div>`;
               }).join("");
@@ -2818,11 +2913,10 @@ ${recipientHtml}
           const yyyy = thai.getFullYear()
 
           // ✅ ต้องมี backtick
-          const todaySlash = `${dd}/${mm}/${yyyy}`
-
+          const todayISO = `${yyyy}-${mm}-${dd}`
           const dateInput = document.getElementById("dateFilter")
           if (dateInput) {
-            dateInput.value = todaySlash
+            dateInput.value = todayISO
           }
 
           // โหลดพัสดุของวันนี้ทันที
@@ -2900,17 +2994,188 @@ ${recipientHtml}
 
           }
         }
+      </script>
 
-        function openCalendar() {
+      <!-- ============================================================
+           Hold List JavaScript
+      ============================================================ -->
+      <script>
+        /* ---- Stranded page: checkbox helpers ---- */
 
-          const input = document.getElementById("dateFilter");
+        function onStrandedCbChange() {
+          updateStrandedSelectedCount();
+          const all = document.querySelectorAll(".stranded-cb");
+          const checked = document.querySelectorAll(".stranded-cb:checked");
+          const selectAllCb = document.getElementById("strandedSelectAll");
+          if (selectAllCb) {
+            selectAllCb.checked = all.length > 0 && checked.length === all.length;
+            selectAllCb.indeterminate = checked.length > 0 && checked.length < all.length;
+          }
+        }
 
-          input.showPicker();   // เปิดปฏิทิน
+        function toggleSelectAllStranded(checked) {
+          document.querySelectorAll(".stranded-cb").forEach(cb => { cb.checked = checked; });
+          updateStrandedSelectedCount();
+        }
 
-          input.onchange = () => {
-            loadWaitingParcels();
-          };
+        function updateStrandedSelectedCount() {
+          const checked = document.querySelectorAll(".stranded-cb:checked");
+          const countEl = document.getElementById("strandedSelectedCount");
+          if (countEl) {
+            countEl.textContent = checked.length > 0 ? `เลือกแล้ว ${checked.length} รายการ` : "";
+          }
+        }
 
+        function getSelectedStrandedIds() {
+          return Array.from(document.querySelectorAll(".stranded-cb:checked"))
+            .map(cb => parseInt(cb.value));
+        }
+
+        async function addStrandedToHold() {
+          const ids = getSelectedStrandedIds();
+          if (ids.length === 0) {
+            alert("กรุณาเลือกพัสดุอย่างน้อย 1 รายการ");
+            return;
+          }
+          if (!confirm(`เพิ่มพัสดุที่เลือก ${ids.length} รายการเข้า Hold List ใช่หรือไม่?`)) return;
+
+          try {
+            const res = await fetch("/api/parcels/hold", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ parcel_ids: ids })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "เพิ่มเข้า Hold ไม่สำเร็จ");
+            alert(`เพิ่มเข้า Hold List เรียบร้อย ${data.updated} รายการ`);
+            loadStrandedParcels(currentStrandedDays);
+          } catch (err) {
+            alert("เกิดข้อผิดพลาด: " + err.message);
+          }
+        }
+
+        /* ---- Hold List page ---- */
+
+        async function openHoldListPage() {
+          document.getElementById("moreMenu").classList.add("hidden");
+          adminPage.classList.add("hidden");
+          document.getElementById("holdListPage").classList.remove("hidden");
+          await loadHoldList();
+        }
+
+        function closeHoldListPage() {
+          document.getElementById("holdListPage").classList.add("hidden");
+          adminPage.classList.remove("hidden");
+        }
+
+        async function refreshHoldList() {
+          await loadHoldList();
+        }
+
+        async function loadHoldList() {
+          const summaryEl = document.getElementById("holdSummary");
+          const listEl = document.getElementById("holdList");
+          const deleteBar = document.getElementById("holdDeleteBar");
+
+          summaryEl.innerHTML = `<div class="text-sm text-gray-400 text-center py-4">กำลังโหลด...</div>`;
+          listEl.innerHTML = "";
+          deleteBar.classList.add("hidden");
+
+          try {
+            const res = await fetch("/api/parcels/hold", { credentials: "include" });
+            if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (status ${res.status})`);
+            const data = await res.json();
+
+            const unreceived = data.items.filter(p => !p.received);
+            const received = data.items.filter(p => p.received);
+
+            summaryEl.innerHTML = `
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+                <span class="material-symbols-outlined text-amber-500 text-[28px]">inventory</span>
+                <div>
+                  <div class="text-sm text-amber-700 font-medium">พัสดุใน Hold List ทั้งหมด</div>
+                  <div class="text-2xl font-bold text-amber-800">${data.total} ชิ้น</div>
+                  <div class="text-xs text-amber-600 mt-0.5">ยังไม่รับ ${unreceived.length} · รับแล้ว ${received.length}</div>
+                </div>
+              </div>`;
+
+            if (data.total === 0) {
+              listEl.innerHTML = `
+                <div class="text-center text-gray-400 text-sm py-10">
+                  <span class="material-symbols-outlined text-[40px] block mb-2">inventory</span>
+                  ไม่มีพัสดุใน Hold List
+                </div>`;
+              return;
+            }
+
+            if (unreceived.length > 0) {
+              deleteBar.classList.remove("hidden");
+            }
+
+            listEl.innerHTML = data.items.map(p => {
+              const name = p.unofficial_recipient || p.recipient_name || "-";
+              const receivedBadge = p.received
+                ? `<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">รับแล้ว</span>`
+                : `<span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">ยังไม่รับ</span>`;
+
+              let ageBadgeCls = "bg-yellow-100 text-yellow-700";
+              if (p.days_stranded >= 180) ageBadgeCls = "bg-red-100 text-red-700";
+              else if (p.days_stranded >= 90) ageBadgeCls = "bg-orange-100 text-orange-700";
+
+              return `
+                <div class="bg-white rounded-xl border border-gray-100 px-4 py-3 flex flex-col gap-1 shadow-sm mb-2">
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <span class="text-xs font-mono text-gray-700 break-all flex-1">${escapeHtml(p.tracking_number)}</span>
+                    <div class="flex gap-1 flex-shrink-0">
+                      ${receivedBadge}
+                      <span class="text-xs px-2 py-0.5 rounded-full font-medium ${ageBadgeCls}">${p.days_stranded} วัน</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-purple-400 text-[15px]">badge</span>
+                    ${name !== "-"
+                  ? `<span class="text-sm font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">${escapeHtml(name)}</span>`
+                  : `<span class="text-xs text-gray-400 italic">ไม่ระบุชื่อ</span>`}
+                  </div>
+                  <div class="flex gap-4 text-xs text-gray-500">
+                    <span>เลขคิว <span class="font-semibold text-gray-700">${escapeHtml(p.queue_number ?? "-")}</span></span>
+                    <span>เข้าเมื่อ: <span class="font-semibold text-gray-700">${formatThaiDate(p.created_at)}</span></span>
+                  </div>
+                </div>`;
+            }).join("");
+
+          } catch (err) {
+            summaryEl.innerHTML = `<div class="text-sm text-red-400 text-center py-4">${err.message}</div>`;
+          }
+        }
+
+        async function deleteUnreceivedHold() {
+          try {
+            const res = await fetch("/api/parcels/hold", { credentials: "include" });
+            if (!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
+            const data = await res.json();
+            const unreceivedIds = data.items.filter(p => !p.received).map(p => p.id);
+
+            if (unreceivedIds.length === 0) {
+              alert("ไม่มีพัสดุที่ยังไม่รับใน Hold List");
+              return;
+            }
+            if (!confirm(`ลบพัสดุที่ยังไม่รับใน Hold List จำนวน ${unreceivedIds.length} รายการ ใช่หรือไม่?\n(การกระทำนี้ไม่สามารถยกเลิกได้)`)) return;
+
+            const delRes = await fetch("/api/parcels/hold", {
+              method: "DELETE",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ parcel_ids: unreceivedIds })
+            });
+            const delData = await delRes.json();
+            if (!delRes.ok) throw new Error(delData.detail || "ลบไม่สำเร็จ");
+            alert(`ลบเรียบร้อย ${delData.deleted} รายการ`);
+            await loadHoldList();
+          } catch (err) {
+            alert("เกิดข้อผิดพลาด: " + err.message);
+          }
         }
       </script>
 

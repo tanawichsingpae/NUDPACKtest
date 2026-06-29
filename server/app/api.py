@@ -1359,6 +1359,125 @@ def stranded_parcels(
     finally:
         db.close()
 
+# ---------------------------
+# Hold List endpoints
+# ---------------------------
+
+class HoldIn(BaseModel):
+    parcel_ids: list[int]
+
+@app.post("/api/parcels/hold")
+def mark_hold(
+    payload: HoldIn,
+    request: Request,
+    admin=Depends(require_admin)
+):
+    """Mark parcels as hold_for_disposal = TRUE"""
+    if not payload.parcel_ids:
+        raise HTTPException(status_code=400, detail="parcel_ids required")
+
+    admin_name = admin["name"]
+    db = SessionLocal()
+    try:
+        parcels = db.query(Parcel).filter(Parcel.id.in_(payload.parcel_ids)).all()
+        for p in parcels:
+            p.hold_for_disposal = True
+        db.commit()
+
+        write_audit(
+            db,
+            entity="Hold",
+            entity_id=0,
+            action="HOLD_SELECTED",
+            user=f"เจ้าหน้าที่: {admin_name}",
+            details=f"เพิ่มเข้า Hold List จำนวน {len(parcels)} ชิ้น\nIDs: {payload.parcel_ids}"
+        )
+        db.commit()
+        return {"updated": len(parcels)}
+    finally:
+        db.close()
+
+
+@app.get("/api/parcels/hold")
+def list_hold(
+    admin=Depends(require_admin)
+):
+    """Return all parcels where hold_for_disposal = TRUE, including received status"""
+    db = SessionLocal()
+    try:
+        tz_thai = timezone(timedelta(hours=7))
+        rows = (
+            db.query(Parcel)
+            .filter(Parcel.hold_for_disposal == True)  # noqa: E712
+            .order_by(Parcel.created_at.asc())
+            .all()
+        )
+        result = []
+        for p in rows:
+            dt = p.created_at
+            if dt and dt.tzinfo is None:
+                dt = dt.replace(tzinfo=tz_thai)
+            now = thai_now().replace(tzinfo=tz_thai)
+            days_stranded = (now - dt).days if dt else 0
+            received = p.status == "ได้รับแล้ว"
+            result.append({
+                "id": p.id,
+                "tracking_number": p.tracking_number,
+                "queue_number": p.queue_number,
+                "status": p.status,
+                "received": received,
+                "recipient_name": p.recipient_name,
+                "unofficial_recipient": p.unofficial_recipient,
+                "created_at": dt.isoformat() if dt else None,
+                "days_stranded": days_stranded,
+            })
+        return {"total": len(result), "items": result}
+    finally:
+        db.close()
+
+
+@app.delete("/api/parcels/hold")
+def delete_hold(
+    payload: HoldIn,
+    request: Request,
+    admin=Depends(require_admin)
+):
+    """Delete hold parcels that are NOT yet received (received=false), by id"""
+    if not payload.parcel_ids:
+        raise HTTPException(status_code=400, detail="parcel_ids required")
+
+    admin_name = admin["name"]
+    db = SessionLocal()
+    try:
+        to_delete = (
+            db.query(Parcel)
+            .filter(
+                Parcel.hold_for_disposal == True,  # noqa: E712
+                Parcel.status != "ได้รับแล้ว",
+                Parcel.id.in_(payload.parcel_ids)
+            )
+            .all()
+        )
+        count = len(to_delete)
+        for p in to_delete:
+            db.delete(p)
+
+        db.commit()
+
+        write_audit(
+            db,
+            entity="Hold",
+            entity_id=0,
+            action="HOLD_DELETE",
+            user=f"เจ้าหน้าที่: {admin_name}",
+            details=f"ลบจาก Hold List (ยังไม่รับ) จำนวน {count} ชิ้น\nIDs: {payload.parcel_ids}"
+        )
+        db.commit()
+        return {"deleted": count}
+    finally:
+        db.close()
+
+
 @app.get("/api/reports/stranded/export")
 def export_stranded(
     days: int = Query(30, ge=1),
