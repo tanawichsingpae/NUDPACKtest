@@ -233,10 +233,10 @@ hover:bg-red-100 active:scale-95 transition">
       <div class="flex gap-2 items-center flex-wrap">
 
         <!-- queue search -->
-        <input id="queueSearch" placeholder="ค้นหาเลขคิว" class="border px-3 py-2 rounded-xl text-sm w-24">
+        <input id="queueSearch" placeholder="ค้นหาเลขคิว" class="border px-3 py-2 rounded-xl text-sm w-24" onkeydown="if(event.key === 'Enter') loadWaitingParcels()">
 
         <!-- recipient search -->
-        <input id="recipientSearch" placeholder="ค้นหาชื่อหน้ากล่อง" class="border px-3 py-2 rounded-xl text-sm w-32">
+        <input id="recipientSearch" placeholder="ค้นหาชื่อหน้ากล่อง" class="border px-3 py-2 rounded-xl text-sm w-32" onkeydown="if(event.key === 'Enter') loadWaitingParcels()">
 
         <!-- search button -->
         <div class="relative">
@@ -2931,8 +2931,11 @@ ${recipientHtml}
             dateInput.value = todayISO
           }
 
-          // โหลดพัสดุของวันนี้ทันที
-          loadWaitingParcels()
+          // แสดงข้อความเริ่มต้นแทนการโหลดพัสดุอัตโนมัติ
+          const box = document.getElementById("parcelList");
+          if (box) {
+            box.innerHTML = `<div class="text-sm text-gray-500 text-center py-4">กรุณากรอกเลขคิวหรือชื่อหน้ากล่อง</div>`;
+          }
         }
 
         function toggleMoreMenu() {
