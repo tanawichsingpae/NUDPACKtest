@@ -1471,7 +1471,8 @@ def stranded_parcels(
             db.query(Parcel)
             .filter(
                 Parcel.status.in_(["ยังไม่ได้รับ", "กำลังรอ"]),
-                Parcel.created_at <= cutoff
+                Parcel.created_at <= cutoff,
+                Parcel.hold_for_disposal != True
             )
             .order_by(Parcel.created_at.asc())
             .all()
@@ -1534,7 +1535,8 @@ def export_stranded(
             db.query(Parcel)
             .filter(
                 Parcel.status.in_(["ยังไม่ได้รับ", "กำลังรอ"]),
-                Parcel.created_at <= cutoff
+                Parcel.created_at <= cutoff,
+                Parcel.hold_for_disposal != True
             )
             .order_by(Parcel.created_at.asc())
             .all()
