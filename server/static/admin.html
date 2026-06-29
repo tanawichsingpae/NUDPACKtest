@@ -167,20 +167,6 @@ hover:bg-red-100 active:scale-95 transition">
               </span>
               พัสดุตกค้าง
             </button>
-
-            <!-- เส้นคั่น -->
-            <div class="h-px bg-gray-100 my-1"></div>
-
-            <!-- Hold List -->
-            <button onclick="openHoldListPage()" class="flex items-center gap-3 w-full
-           px-4 py-3 text-sm font-medium text-gray-700
-           hover:bg-orange-50 hover:text-orange-600
-           transition duration-150">
-              <span class="material-symbols-outlined text-[18px]">
-                inventory
-              </span>
-              Hold List
-            </button>
           </div>
 
         </div>
@@ -641,6 +627,11 @@ hover:bg-red-100 active:scale-95 transition">
             ค้นหา
           </button>
         </div>
+        
+        <button onclick="openHoldListPage()" class="ml-auto flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-sm px-3 py-2 rounded-xl shadow-sm active:scale-95 transition font-medium">
+          <span class="material-symbols-outlined text-[18px]">inventory</span>
+          ดู Hold List
+        </button>
       </div>
 
       <!-- Summary card -->
