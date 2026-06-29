@@ -585,7 +585,7 @@ def mark_hold(
 def list_hold(
     admin=Depends(require_admin)
 ):
-    """Return all parcels where hold_for_disposal = TRUE, including received status"""
+    """Return all parcels where hold_for_disposal = TRUE, including received status, grouped by date"""
     db = SessionLocal()
     try:
         tz_thai = timezone(timedelta(hours=7))
@@ -595,15 +595,17 @@ def list_hold(
             .order_by(Parcel.created_at.asc())
             .all()
         )
-        result = []
+        from collections import defaultdict
+        groups: dict[str, list] = defaultdict(list)
         for p in rows:
             dt = p.created_at
             if dt and dt.tzinfo is None:
                 dt = dt.replace(tzinfo=tz_thai)
             now = thai_now().replace(tzinfo=tz_thai)
+            date_key = dt.strftime("%Y-%m-%d") if dt else "unknown"
             days_stranded = (now - dt).days if dt else 0
             received = p.status == "ได้รับแล้ว"
-            result.append({
+            groups[date_key].append({
                 "id": p.id,
                 "tracking_number": p.tracking_number,
                 "queue_number": p.queue_number,
@@ -614,7 +616,43 @@ def list_hold(
                 "created_at": dt.isoformat() if dt else None,
                 "days_stranded": days_stranded,
             })
-        return {"total": len(result), "items": result}
+        result = [
+            {"date": k, "items": v}
+            for k, v in sorted(groups.items())
+        ]
+        return {"total": len(rows), "groups": result}
+    finally:
+        db.close()
+
+
+@app.post("/api/parcels/unhold")
+def unmark_hold(
+    payload: HoldIn,
+    request: Request,
+    admin=Depends(require_admin)
+):
+    """Unmark parcels as hold_for_disposal = FALSE"""
+    if not payload.parcel_ids:
+        raise HTTPException(status_code=400, detail="parcel_ids required")
+
+    admin_name = admin["name"]
+    db = SessionLocal()
+    try:
+        parcels = db.query(Parcel).filter(Parcel.id.in_(payload.parcel_ids)).all()
+        for p in parcels:
+            p.hold_for_disposal = False
+        db.commit()
+
+        write_audit(
+            db,
+            entity="Hold",
+            entity_id=0,
+            action="HOLD_UNSELECTED",
+            user=f"เจ้าหน้าที่: {admin_name}",
+            details=f"นำออกจาก Hold List จำนวน {len(parcels)} ชิ้น\nIDs: {payload.parcel_ids}"
+        )
+        db.commit()
+        return {"updated": len(parcels)}
     finally:
         db.close()
 
