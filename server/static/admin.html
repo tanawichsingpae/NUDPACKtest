@@ -573,16 +573,20 @@ hover:bg-red-100 active:scale-95 transition">
   <div id="strandedPage" class="fixed inset-0 bg-[#fafafa] hidden overflow-y-auto z-50">
 
     <header class="sticky top-0 bg-white border-b p-4 z-30">
-      <div class="max-w-xl mx-auto relative flex items-center">
-        <button onclick="closeStrandedPage()" class="size-9 rounded-full bg-slate-100
-             flex items-center justify-center
-             hover:bg-slate-200 transition">
-          <span class="material-symbols-outlined text-slate-700">arrow_back</span>
-        </button>
-        <h1 class="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800">
-          พัสดุตกค้าง
-        </h1>
-        <div class="ml-auto flex items-center gap-2">
+      <div class="max-w-xl mx-auto flex flex-col gap-3">
+        <!-- Top Row -->
+        <div class="relative flex items-center">
+          <button onclick="closeStrandedPage()" class="size-9 rounded-full bg-slate-100
+               flex items-center justify-center
+               hover:bg-slate-200 transition">
+            <span class="material-symbols-outlined text-slate-700">arrow_back</span>
+          </button>
+          <h1 class="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800">
+            พัสดุตกค้าง
+          </h1>
+        </div>
+        <!-- Bottom Row (Buttons) -->
+        <div class="flex items-center gap-2 justify-end">
           <!-- Add to Hold List button -->
           <button id="addToHoldBtn" onclick="addStrandedToHold()" hidden
                   class="flex items-center gap-1 bg-amber-500 hover:bg-amber-600
