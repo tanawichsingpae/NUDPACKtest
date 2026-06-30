@@ -2776,7 +2776,6 @@ ${recipientHtml}
             }
 
             selectBar.classList.remove("hidden");
-            addHoldBtn.hidden = false;
             // reset select-all
             document.getElementById("strandedSelectAll").checked = false;
             updateStrandedSelectedCount();
@@ -3059,8 +3058,12 @@ ${recipientHtml}
         function updateStrandedSelectedCount() {
           const checked = document.querySelectorAll(".stranded-cb:checked");
           const countEl = document.getElementById("strandedSelectedCount");
+          const addHoldBtn = document.getElementById("addToHoldBtn");
           if (countEl) {
             countEl.textContent = checked.length > 0 ? `เลือกแล้ว ${checked.length} รายการ` : "";
+          }
+          if (addHoldBtn) {
+            addHoldBtn.hidden = checked.length === 0;
           }
         }
 
