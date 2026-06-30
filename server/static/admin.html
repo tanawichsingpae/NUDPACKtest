@@ -2776,7 +2776,7 @@ ${recipientHtml}
             }
 
             selectBar.classList.remove("hidden");
-            // reset select-all
+            // reset select-all (ปุ่ม Hold จะถูกซ่อน/แสดงโดย updateStrandedSelectedCount ด้านล่าง)
             document.getElementById("strandedSelectAll").checked = false;
             updateStrandedSelectedCount();
 
@@ -3058,10 +3058,12 @@ ${recipientHtml}
         function updateStrandedSelectedCount() {
           const checked = document.querySelectorAll(".stranded-cb:checked");
           const countEl = document.getElementById("strandedSelectedCount");
-          const addHoldBtn = document.getElementById("addToHoldBtn");
           if (countEl) {
             countEl.textContent = checked.length > 0 ? `เลือกแล้ว ${checked.length} รายการ` : "";
           }
+
+          // ซ่อน/แสดงปุ่ม เพิ่มเข้า Hold List ตามจำนวนที่เลือก
+          const addHoldBtn = document.getElementById("addToHoldBtn");
           if (addHoldBtn) {
             addHoldBtn.hidden = checked.length === 0;
           }
