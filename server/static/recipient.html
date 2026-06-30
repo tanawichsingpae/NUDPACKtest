@@ -464,6 +464,7 @@ hover:bg-red-100 active:scale-95 transition">
 
   </main>
   <script>
+    const API_BASE = "/nudpack";
 
 
     /* ---------- Globals ---------- */
@@ -494,7 +495,7 @@ hover:bg-red-100 active:scale-95 transition">
       confirming = true
 
       try {
-        await fetch(`/api/parcels/${tracking}/confirm_pickup/recipient`, {
+        await fetch(`${API_BASE}/api/parcels/${tracking}/confirm_pickup/recipient`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -524,7 +525,7 @@ hover:bg-red-100 active:scale-95 transition">
       if (!pendingVerification) {
         setStatus('');
         try {
-          const res = await fetch(`/api/parcels/${encodeURIComponent(value)}/verify`, { credentials: "include", method: 'POST' });
+          const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(value)}/verify`, { credentials: "include", method: 'POST' });
           if (!res.ok) {
 
             // ===== ไม่พบพัสดุ =====
@@ -589,7 +590,7 @@ hover:bg-red-100 active:scale-95 transition">
             return
           }
           function confirmRecipientPickup(tracking, recipientName) {
-            fetch(`/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup/recipient`, {
+            fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup/recipient`, {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -729,7 +730,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function doConfirmPickup(tracking, recipientToSend) {
       setStatus('');
       try {
-        const res = await fetch(`/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup/recipient`, {
+        const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup/recipient`, {
           credentials: "include",
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -775,7 +776,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function doSearch() {
       const q = document.getElementById('searchInput').value.trim();
       if (!q) return alert('Please input tracking or queue');
-      const res = await fetch(`/api/recipient/parcels?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`${API_BASE}/api/recipient/parcels?q=${encodeURIComponent(q)}`);
 
       if (!res.ok) return alert('Search failed');
       const data = await res.json();
@@ -793,7 +794,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function verifyFromSearch(tracking) {
       setStatus('');
       try {
-        const res = await fetch(`/api/parcels/${encodeURIComponent(tracking)}/verify`, { credentials: "include", method: "POST" });
+        const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/verify`, { credentials: "include", method: "POST" });
         if (!res.ok) { setStatus(''); return; }
         const info = await res.json();
         pendingVerification = {
@@ -857,7 +858,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function loadReportValues() {
       const p = document.getElementById('r_period').value;
 
-      const res = await fetch(`/api/reports/dates?period=${p}`, {
+      const res = await fetch(`${API_BASE}/api/reports/dates?period=${p}`, {
         credentials: "include"
       });
 
@@ -924,7 +925,7 @@ hover:bg-red-100 active:scale-95 transition">
       }
 
       const sres = await fetch(
-        `/api/reports/summary?period=daily&start=${start}&end=${end}`,
+        `${API_BASE}/api/reports/summary?period=daily&start=${start}&end=${end}`,
         { credentials: "include" }
       );
 
@@ -986,7 +987,7 @@ hover:bg-red-100 active:scale-95 transition">
 `
 
       const tres = await fetch(
-        `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
+        `${API_BASE}/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
         { credentials: "include" }
       );
 
@@ -1090,7 +1091,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function removeSelected() {
       if (selectedToDelete.size === 0) return;
 
-      const res = await fetch('/api/parcels/bulk_delete', {
+      const res = await fetch(`${API_BASE}/api/parcels/bulk_delete`, {
         credentials: "include",
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1541,7 +1542,7 @@ hover:bg-red-100 active:scale-95 transition">
       const queue = document.getElementById("queueSearch")?.value.trim() || "";
       const date = document.getElementById("dateFilter")?.value || "";
 
-      let url = `/api/recipient/parcels?`;
+      let url = `${API_BASE}/api/recipient/parcels?`;
 
       if (queue) url += `q=${encodeURIComponent(queue)}&`;
       if (date) url += `date=${date}`;
@@ -1561,7 +1562,7 @@ hover:bg-red-100 active:scale-95 transition">
 
 
     function logout() {
-      fetch("/recipient/logout", {
+      fetch(`${API_BASE}/recipient/logout`, {
         credentials: "include"
       }).then(() => {
         location.replace("/login_recipient")   // replace ไม่ให้กดย้อน
@@ -1600,7 +1601,7 @@ hover:bg-red-100 active:scale-95 transition">
         }
 
 
-        const res = await fetch(`/api/recipient/parcels?${params.toString()}`, {
+        const res = await fetch(`${API_BASE}/api/recipient/parcels?${params.toString()}`, {
           credentials: "include"
         });
 
