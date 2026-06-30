@@ -993,6 +993,89 @@ hover:bg-red-100 active:scale-95 transition">
           </div>
         </div>
       </div>
+
+      <!-- Generic Confirm Modal for Hold List -->
+      <div id="holdConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
+        <!-- backdrop -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeHoldConfirmModal(false)"></div>
+        <!-- modal -->
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+          <div class="flex items-center gap-3">
+            <div class="size-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
+              <span class="material-symbols-outlined text-[20px]">help</span>
+            </div>
+            <h3 class="font-semibold text-slate-800 text-lg">ยืนยันการดำเนินการ</h3>
+          </div>
+          <p id="holdConfirmText" class="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-line"></p>
+          <div class="mt-6 flex justify-end gap-3">
+            <button onclick="closeHoldConfirmModal(false)" class="px-4 py-2 rounded-lg text-sm bg-slate-100 hover:bg-slate-200 text-slate-700">ยกเลิก</button>
+            <button onclick="closeHoldConfirmModal(true)" class="px-4 py-2 rounded-lg text-sm bg-amber-500 hover:bg-amber-600 text-white font-medium">ยืนยัน</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generic Alert Modal for Hold List -->
+      <div id="holdAlertModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
+        <!-- backdrop -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeHoldAlertModal()"></div>
+        <!-- modal -->
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+          <div class="flex items-center gap-3">
+            <div class="size-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold">
+              <span class="material-symbols-outlined text-[20px]">check_circle</span>
+            </div>
+            <h3 class="font-semibold text-slate-800 text-lg">สำเร็จ</h3>
+          </div>
+          <p id="holdAlertText" class="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-line"></p>
+          <div class="mt-6 flex justify-end">
+            <button onclick="closeHoldAlertModal()" class="px-4 py-2 rounded-lg text-sm bg-green-500 hover:bg-green-600 text-white font-medium">ตกลง</button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        let holdConfirmResolver = null;
+        let holdAlertResolver = null;
+
+        function showHoldConfirm(message) {
+          return new Promise(resolve => {
+            holdConfirmResolver = resolve;
+            document.getElementById('holdConfirmText').innerText = message;
+            const modal = document.getElementById('holdConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+          });
+        }
+        function closeHoldConfirmModal(result) {
+          const modal = document.getElementById('holdConfirmModal');
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          if (holdConfirmResolver) {
+            holdConfirmResolver(result);
+            holdConfirmResolver = null;
+          }
+        }
+
+        function showHoldAlert(message) {
+          return new Promise(resolve => {
+            holdAlertResolver = resolve;
+            document.getElementById('holdAlertText').innerText = message;
+            const modal = document.getElementById('holdAlertModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+          });
+        }
+        function closeHoldAlertModal() {
+          const modal = document.getElementById('holdAlertModal');
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          if (holdAlertResolver) {
+            holdAlertResolver();
+            holdAlertResolver = null;
+          }
+        }
+      </script>
+
       <script>
         let chartInst = null;
         let currentReportData = [];
@@ -3075,7 +3158,8 @@ ${recipientHtml}
             alert("กรุณาเลือกพัสดุอย่างน้อย 1 รายการ");
             return;
           }
-          if (!confirm(`เพิ่มพัสดุที่เลือก ${ids.length} รายการเข้า Hold List ใช่หรือไม่?`)) return;
+          const confirmed = await showHoldConfirm(`เพิ่มพัสดุที่เลือก ${ids.length} รายการเข้า Hold List ใช่หรือไม่?`);
+          if (!confirmed) return;
 
           try {
             const res = await fetch("/api/parcels/hold", {
@@ -3086,7 +3170,7 @@ ${recipientHtml}
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || "เพิ่มเข้า Hold ไม่สำเร็จ");
-            alert(`เพิ่มเข้า Hold List เรียบร้อย ${data.updated} รายการ`);
+            await showHoldAlert(`เพิ่มเข้า Hold List เรียบร้อย ${data.updated} รายการ`);
             loadStrandedParcels(currentStrandedDays);
           } catch (err) {
             alert("เกิดข้อผิดพลาด: " + err.message);
@@ -3277,7 +3361,8 @@ ${recipientHtml}
             alert("กรุณาเลือกพัสดุอย่างน้อย 1 รายการเพื่อนำออก");
             return;
           }
-          if (!confirm(`ต้องการนำพัสดุที่เลือก ${ids.length} รายการออกจาก Hold List ใช่หรือไม่?`)) return;
+          const confirmed = await showHoldConfirm(`ต้องการนำพัสดุที่เลือก ${ids.length} รายการออกจาก Hold List ใช่หรือไม่?`);
+          if (!confirmed) return;
 
           try {
             const res = await fetch("/api/parcels/unhold", {
@@ -3288,7 +3373,7 @@ ${recipientHtml}
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || "นำออกไม่สำเร็จ");
-            alert(`นำออกจาก Hold List เรียบร้อย ${data.updated} รายการ`);
+            await showHoldAlert(`นำออกจาก Hold List เรียบร้อย ${data.updated} รายการ`);
             await loadHoldList();
 
             // refresh stranded list too in the background
@@ -3316,9 +3401,11 @@ ${recipientHtml}
           }
 
           if (unreceivedIds.length < ids.length) {
-            if (!confirm(`คุณเลือก ${ids.length} รายการ แต่มีเพียง ${unreceivedIds.length} รายการที่ 'ยังไม่รับ'\nต้องการดำเนินการลบเฉพาะ ${unreceivedIds.length} รายการนี้ใช่หรือไม่?`)) return;
+            const confirmed = await showHoldConfirm(`คุณเลือก ${ids.length} รายการ แต่มีเพียง ${unreceivedIds.length} รายการที่ 'ยังไม่รับ'\nต้องการดำเนินการลบเฉพาะ ${unreceivedIds.length} รายการนี้ใช่หรือไม่?`);
+            if (!confirmed) return;
           } else {
-            if (!confirm(`ต้องการลบพัสดุที่ยังไม่รับจำนวน ${unreceivedIds.length} รายการ ใช่หรือไม่?\n(การกระทำนี้ไม่สามารถยกเลิกได้)`)) return;
+            const confirmed = await showHoldConfirm(`ต้องการลบพัสดุที่ยังไม่รับจำนวน ${unreceivedIds.length} รายการ ใช่หรือไม่?\n(การกระทำนี้ไม่สามารถยกเลิกได้)`);
+            if (!confirmed) return;
           }
 
           try {
@@ -3331,7 +3418,7 @@ ${recipientHtml}
             const delData = await delRes.json();
             if (!delRes.ok) throw new Error(delData.detail || "ลบไม่สำเร็จ");
 
-            alert(`ลบเรียบร้อย ${delData.deleted} รายการ`);
+            await showHoldAlert(`ลบเรียบร้อย ${delData.deleted} รายการ`);
             await loadHoldList();
           } catch (err) {
             alert("เกิดข้อผิดพลาด: " + err.message);
