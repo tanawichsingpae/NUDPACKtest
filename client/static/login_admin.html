@@ -134,7 +134,7 @@ const pass = adminPass.value.trim()
 if(!name) return showAlert("กรุณากรอกชื่อ")
 if(!pass) return showAlert("กรุณากรอกรหัสผ่าน")
 
-const r = await fetch("/admin/login",{
+const r = await fetch("/nudpack/admin/login",{
   credentials:"include",
   method:"POST",
   headers:{ "Content-Type":"application/json"},
@@ -161,7 +161,7 @@ const data = await r.json()
 
 localStorage.setItem("admin_staff_name", data.name)
 
-location.href="/admin"
+location.href="/nudpack/admin"
 }
 function showAlert(msg){
   const box = document.getElementById("adminAlert")

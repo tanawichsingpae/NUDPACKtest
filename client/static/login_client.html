@@ -146,7 +146,7 @@
 
 
     <script>
-        const SERVER = location.origin
+        const SERVER = location.origin + "/nudpack"
 
         let selectedCarrierId = null
 
@@ -186,7 +186,7 @@
         return
     }
 
-    const res = await fetch("/api/login_client", {
+    const res = await fetch("/nudpack/api/login_client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",   // สำคัญ
@@ -209,7 +209,7 @@
     )
 
     // login สำเร็จ ค่อยเข้า client
-    location.href = "/client"
+    location.href = "/nudpack/client"
 }
 
 

@@ -293,7 +293,7 @@ hover:bg-red-100 active:scale-95 transition">
 
 
   <script>
-    const SERVER = location.origin
+    const SERVER = location.origin + "/nudpack"
 
     const scanInput = document.getElementById("scanInput")
     const previewBody = document.getElementById("previewBody")
@@ -594,10 +594,10 @@ ${new Date(p.created_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" })}
       localStorage.removeItem("preview")
 
       // logout session server
-      fetch("/logout", {
+      fetch(`${SERVER}/logout`, {
         credentials: "include"
       }).finally(() => {
-        location.replace("/login_client")
+        location.replace(`${SERVER}/login_client`)
       })
     }
 

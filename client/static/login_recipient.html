@@ -73,7 +73,7 @@ const name = recipientName.value.trim()
 
 if(!name) return showAlert("กรุณากรอกชื่อ")
 
-const r = await fetch("/recipient/login",{
+const r = await fetch("/nudpack/recipient/login",{
   credentials:"include",
   method:"POST",
   headers:{ "Content-Type":"application/json"},
@@ -92,7 +92,7 @@ const data = await r.json()
 
 localStorage.setItem("recipient_name", data.name)
 
-location.href="/recipient"
+location.href="/nudpack/recipient"
 }
 function showAlert(msg){
   const box = document.getElementById("recipientAlert")
