@@ -2010,9 +2010,9 @@ hover:bg-red-100 active:scale-95 transition">
 
           // ใช้ fetch + Blob แทน window.location เพื่อ:
           // 1) ส่ง session cookie ไปด้วย (credentials: include)
-          // 2) URL แบบ relative ทำงานถูกต้องแม้ app อยู่ใต้ subprefix (เช่น /nudpack/)
+          // 2) URL แบบ absolute (ขึ้นต้นด้วย /) ทำงานถูกต้องเสมอ ไม่ว่า app จะอยู่ใต้ subprefix ใด
           try {
-            const res = await fetch(`api/reports/export?${qs.toString()}`, {
+            const res = await fetch(`/api/reports/export?${qs.toString()}`, {
               credentials: "include"
             });
             if (!res.ok) {
@@ -2722,8 +2722,9 @@ ${recipientHtml}
 
         async function exportStrandedParcels() {
           // ใช้ fetch + Blob แทน window.location เพื่อส่ง session cookie และรองรับ subprefix
+          // (ใช้ absolute path ขึ้นต้นด้วย / เพื่อให้ resolve ถูกต้องเสมอ)
           try {
-            const res = await fetch(`api/reports/stranded/export?days=${currentStrandedDays}`, {
+            const res = await fetch(`/api/reports/stranded/export?days=${currentStrandedDays}`, {
               credentials: "include"
             });
             if (!res.ok) {
