@@ -270,8 +270,8 @@ hover:bg-red-100 active:scale-95 transition">
       </div>
 
       <h3 id="confirmTitle" class="text-lg font-bold mb-2">
-  ยืนยันการอัปโหลด
-</h3>
+        ยืนยันการอัปโหลด
+      </h3>
 
       <p id="confirmMessage" class="text-gray-600 whitespace-pre-line"></p>
 
@@ -293,7 +293,7 @@ hover:bg-red-100 active:scale-95 transition">
 
 
   <script>
-    const SERVER = location.origin + "/nudpack"
+    const SERVER = location.origin
 
     const scanInput = document.getElementById("scanInput")
     const previewBody = document.getElementById("previewBody")
@@ -594,7 +594,7 @@ ${new Date(p.created_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" })}
       localStorage.removeItem("preview")
 
       // logout session server
-      fetch(`${SERVER}/logout`, {
+      fetch("/logout", {
         credentials: "include"
       }).finally(() => {
         location.replace("/login_client")
@@ -901,60 +901,60 @@ ${new Date(p.created_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" })}
     }
     function cancelMultipleReservations() {
 
-  if (!selectedSections.length) return
+      if (!selectedSections.length) return
 
-  const popup = document.getElementById("confirmPopup")
+      const popup = document.getElementById("confirmPopup")
 
-  // เปลี่ยนหัว
-  document.getElementById("confirmTitle").innerText = "ยกเลิกการจอง"
+      // เปลี่ยนหัว
+      document.getElementById("confirmTitle").innerText = "ยกเลิกการจอง"
 
-  document.getElementById("confirmMessage").innerText =
-    "ต้องการยกเลิกการจองหรือไม่"
+      document.getElementById("confirmMessage").innerText =
+        "ต้องการยกเลิกการจองหรือไม่"
 
-  const confirmBtn = popup.querySelector("button.bg-red-500")
-  confirmBtn.innerText = "ตกลง"
+      const confirmBtn = popup.querySelector("button.bg-red-500")
+      confirmBtn.innerText = "ตกลง"
 
-  confirmBtn.onclick = async () => {
+      confirmBtn.onclick = async () => {
 
-    try {
+        try {
 
-      await fetch(`${SERVER}/api/queue/cancel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          section_ids: selectedSections
-        })
-      })
+          await fetch(`${SERVER}/api/queue/cancel`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              section_ids: selectedSections
+            })
+          })
 
-      preview = preview.filter(p =>
-        !selectedSections.includes(p.section_id)
-      )
+          preview = preview.filter(p =>
+            !selectedSections.includes(p.section_id)
+          )
 
-      save()
-      render()
+          save()
+          render()
 
-      showAlert("ยกเลิกการจองสำเร็จ", "success", "สำเร็จ")
+          showAlert("ยกเลิกการจองสำเร็จ", "success", "สำเร็จ")
 
-      localStorage.removeItem("parcelAmount")
-      localStorage.removeItem("selectedSections")
-      localStorage.removeItem("reserveLocked")
+          localStorage.removeItem("parcelAmount")
+          localStorage.removeItem("selectedSections")
+          localStorage.removeItem("reserveLocked")
 
-      selectedSections = []
-      reserveLocked = false
+          selectedSections = []
+          reserveLocked = false
 
-      updateActionButton()
-      await loadAvailableSections()
+          updateActionButton()
+          await loadAvailableSections()
 
-    } catch (e) {
-      showAlert("เกิดข้อผิดพลาด", "error")
+        } catch (e) {
+          showAlert("เกิดข้อผิดพลาด", "error")
+        }
+
+        closeConfirm()
+      }
+
+      popup.classList.remove("hidden")
+      popup.classList.add("flex")
     }
-
-    closeConfirm()
-  }
-
-  popup.classList.remove("hidden")
-  popup.classList.add("flex")
-}
 
     function getMaxSectionsAllowed() {
 
@@ -1097,22 +1097,22 @@ ${new Date(p.created_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" })}
     }
     function confirmAllCheck() {
 
-  const message =
-    "หากยืนยันแล้วจะไม่สามารถกลับมาใช้ section เดิมได้"
+      const message =
+        "หากยืนยันแล้วจะไม่สามารถกลับมาใช้ section เดิมได้"
 
-  document.getElementById("confirmTitle").innerText = "ยืนยันการอัปโหลด"
-  document.getElementById("confirmMessage").innerText = message
+      document.getElementById("confirmTitle").innerText = "ยืนยันการอัปโหลด"
+      document.getElementById("confirmMessage").innerText = message
 
-  const popup = document.getElementById("confirmPopup")
-  const confirmBtn = popup.querySelector("button.bg-red-500")
+      const popup = document.getElementById("confirmPopup")
+      const confirmBtn = popup.querySelector("button.bg-red-500")
 
-  // reset ปุ่มกลับเป็น confirmAll
-  confirmBtn.innerText = "ยืนยัน"
-  confirmBtn.onclick = confirmAll
+      // reset ปุ่มกลับเป็น confirmAll
+      confirmBtn.innerText = "ยืนยัน"
+      confirmBtn.onclick = confirmAll
 
-  popup.classList.remove("hidden")
-  popup.classList.add("flex")
-}
+      popup.classList.remove("hidden")
+      popup.classList.add("flex")
+    }
 
     function closeConfirm() {
       const popup = document.getElementById("confirmPopup")
