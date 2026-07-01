@@ -241,15 +241,14 @@ hover:bg-red-100 active:scale-95 transition">
           onkeydown="if(event.key === 'Enter') loadWaitingParcels()">
 
         <!-- search button -->
-        <div class="relative">
-          <input id="dateFilter" type="date" class="absolute w-0 h-0 opacity-0 pointer-events-none">
-          <button onclick="openCalendar()"
-            class="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-xl text-sm shadow">
+        <div class="relative inline-block">
+          <button type="button" onclick="openCalendar()" class="bg-orange-500 text-white px-4 py-2 rounded-xl">
             ค้นหา
           </button>
-        </div>
 
-      </div>
+          <input id="dateFilter" type="date" class="absolute inset-0 opacity-0 w-full h-full"
+            onchange="loadWaitingParcels()">
+        </div>
 
 
     </section>
@@ -994,8 +993,6 @@ hover:bg-red-100 active:scale-95 transition">
         </div>
       </div>
       <script>
-        const API_BASE = "/nudpack";
-
         let chartInst = null;
         let currentReportData = [];
         let reportEditMode = false;
@@ -1043,7 +1040,7 @@ hover:bg-red-100 active:scale-95 transition">
           confirming = true
 
           try {
-            await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/pickup`, {
+            await fetch(`/api/parcels/${encodeURIComponent(tracking)}/pickup`, {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -1069,7 +1066,7 @@ hover:bg-red-100 active:scale-95 transition">
           if (!pendingVerification) {
             setStatus('');
             try {
-              const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(value)}/verify`, { credentials: "include", method: 'POST' });
+              const res = await fetch(`/api/parcels/${encodeURIComponent(value)}/verify`, { credentials: "include", method: 'POST' });
               if (!res.ok) {
 
                 // ===== ไม่พบพัสดุ =====
@@ -1095,7 +1092,7 @@ hover:bg-red-100 active:scale-95 transition">
                 if (!info.admin_staff_name) {
 
                   // ยันทันที
-                  fetch(`${API_BASE}/api/parcels/${encodeURIComponent(info.tracking)}/confirm_pickup`, {
+                  fetch(`/api/parcels/${encodeURIComponent(info.tracking)}/confirm_pickup`, {
                     method: "POST",
                     credentials: "include",
                     headers: { "Content-Type": "application/json" },
@@ -1195,7 +1192,7 @@ hover:bg-red-100 active:scale-95 transition">
 
                 const trackingClean = normalizeTracking(tracking); // normalize
 
-                fetch(`${API_BASE}/api/parcels/${encodeURIComponent(trackingClean)}/confirm_pickup`, {
+                fetch(`/api/parcels/${encodeURIComponent(trackingClean)}/confirm_pickup`, {
                   method: "POST",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },
@@ -1337,7 +1334,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function doConfirmPickup(tracking, recipientToSend) {
           setStatus('');
           try {
-            const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup`, {
+            const res = await fetch(`/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup`, {
               credentials: "include",
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1386,7 +1383,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function doSearch() {
           const q = document.getElementById('searchInput').value.trim();
           if (!q) return alert('Please input tracking or queue');
-          const res = await fetch(`${API_BASE}/api/parcels/search?q=${encodeURIComponent(q)}`);
+          const res = await fetch(`/api/parcels/search?q=${encodeURIComponent(q)}`);
 
           if (!res.ok) return alert('Search failed');
           const data = await res.json();
@@ -1404,7 +1401,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function verifyFromSearch(tracking) {
           setStatus('');
           try {
-            const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/verify`, { credentials: "include", method: "POST" });
+            const res = await fetch(`/api/parcels/${encodeURIComponent(tracking)}/verify`, { credentials: "include", method: "POST" });
             if (!res.ok) { setStatus(''); return; }
             const info = await res.json();
             pendingVerification = {
@@ -1468,7 +1465,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function loadReportValues() {
           const p = document.getElementById('r_period').value;
 
-          const res = await fetch(`${API_BASE}/api/reports/dates?period=${p}`, {
+          const res = await fetch(`/api/reports/dates?period=${p}`, {
             credentials: "include"
           });
 
@@ -1537,7 +1534,7 @@ hover:bg-red-100 active:scale-95 transition">
           }
 
           const sres = await fetch(
-            `${API_BASE}/api/reports/summary?period=daily&start=${start}&end=${end}`,
+            `/api/reports/summary?period=daily&start=${start}&end=${end}`,
             { credentials: "include" }
           );
 
@@ -1547,7 +1544,7 @@ hover:bg-red-100 active:scale-95 transition">
           renderReportTable(currentReportData);
 
           const ares = await fetch(
-            `${API_BASE}/api/reports/advanced_charts?period=daily&start=${start}&end=${end}`,
+            `/api/reports/advanced_charts?period=daily&start=${start}&end=${end}`,
             { credentials: "include" }
           );
           const adata = await ares.json();
@@ -1599,7 +1596,7 @@ hover:bg-red-100 active:scale-95 transition">
 `;
 
           const tres = await fetch(
-            `${API_BASE}/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
+            `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
             { credentials: "include" }
           );
 
@@ -1704,7 +1701,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function removeSelected() {
           if (selectedToDelete.size === 0) return;
 
-          const res = await fetch(`${API_BASE}/api/parcels/bulk_delete`, {
+          const res = await fetch('/api/parcels/bulk_delete', {
             credentials: "include",
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1826,7 +1823,7 @@ hover:bg-red-100 active:scale-95 transition">
             const todayStr = `${yyyy}${mm}${dd}`;
 
             const res = await fetch(
-              `${API_BASE}/api/reports/timeseries?period=hourly&start=${todayStr}&end=${todayStr}`,
+              `/api/reports/timeseries?period=hourly&start=${todayStr}&end=${todayStr}`,
               { credentials: "include" }
             );
             const data = await res.json();
@@ -1848,7 +1845,7 @@ hover:bg-red-100 active:scale-95 transition">
             };
 
             const res = await fetch(
-              `${API_BASE}/api/reports/timeseries?period=dayofweek&start=${fmt(monday)}&end=${fmt(thai)}`,
+              `/api/reports/timeseries?period=dayofweek&start=${fmt(monday)}&end=${fmt(thai)}`,
               { credentials: "include" }
             );
             const data = await res.json();
@@ -1861,7 +1858,7 @@ hover:bg-red-100 active:scale-95 transition">
             if (!start || !end) return;
 
             const res = await fetch(
-              `${API_BASE}/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
+              `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
               { credentials: "include" }
             );
             const data = await res.json();
@@ -1950,7 +1947,7 @@ hover:bg-red-100 active:scale-95 transition">
           // Horizontal Bar Chart (Peak Hours) — ดึงจาก timeseries hourly เพื่อความถูกต้อง
           try {
             const phRes = await fetch(
-              `${API_BASE}/api/reports/timeseries?period=hourly&start=${start}&end=${end}`,
+              `/api/reports/timeseries?period=hourly&start=${start}&end=${end}`,
               { credentials: "include" }
             );
             const phData = await phRes.json();
@@ -2011,7 +2008,8 @@ hover:bg-red-100 active:scale-95 transition">
             fmt: fmt
           });
 
-          window.location = `/api/reports/export?${qs.toString()}`;
+          const basePath = window.location.pathname.replace(/\/(admin)(\.html)?\/?$/, "");
+          window.location = `${basePath}/api/reports/export?${qs.toString()}`;
         }
         /* ---------- Utilities ---------- */
         function setStatus(s) { try { document.getElementById('scanStatus').innerText = s; } catch (e) { } }
@@ -2352,7 +2350,7 @@ hover:bg-red-100 active:scale-95 transition">
           const queue = document.getElementById("queueSearch")?.value.trim() || "";
           const date = document.getElementById("dateFilter")?.value || "";
 
-          let url = `${API_BASE}/api/parcels/search?`;
+          let url = `/api/parcels/search?`;
 
           if (queue) url += `q=${encodeURIComponent(queue)}&`;
           if (date) url += `date=${date}`;
@@ -2367,7 +2365,7 @@ hover:bg-red-100 active:scale-95 transition">
 
 
         function logout() {
-          fetch(`${API_BASE}/admin/logout`, {
+          fetch("/admin/logout", {
             credentials: "include"
           }).then(() => {
             location.replace("/login_admin")   // replace ไม่ให้กดย้อน
@@ -2415,7 +2413,7 @@ hover:bg-red-100 active:scale-95 transition">
             }
 
 
-            const res = await fetch(`${API_BASE}/api/parcels?${params.toString()}`, {
+            const res = await fetch(`/api/parcels?${params.toString()}`, {
               credentials: "include"
             });
 
@@ -2532,7 +2530,7 @@ ${recipientHtml}
             });
 
           try {
-            const res = await fetch(`${API_BASE}/api/dashboard/today`, { credentials: "include" });
+            const res = await fetch("/api/dashboard/today", { credentials: "include" });
             if (!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
             const d = await res.json();
 
@@ -2656,7 +2654,7 @@ ${recipientHtml}
         async function forceConfirmPending() {
           if (!confirm("ยืนยันพัสดุสถานะ 'กำลังรอ' ทั้งหมดเป็น 'ยังไม่ได้รับ' ใช่หรือไม่?")) return;
           try {
-            const res = await fetch(`${API_BASE}/api/dashboard/force_confirm_pending`, {
+            const res = await fetch("/api/dashboard/force_confirm_pending", {
               method: "POST",
               headers: { "Content-Type": "application/json" }
             });
@@ -2698,7 +2696,8 @@ ${recipientHtml}
         }
 
         function exportStrandedParcels() {
-          window.location.href = `/api/reports/stranded/export?days=${currentStrandedDays}`;
+          const basePath = window.location.pathname.replace(/\/(admin)(\.html)?\/?$/, "");
+          window.location.href = `${basePath}/api/reports/stranded/export?days=${currentStrandedDays}`;
         }
 
         function onStrandedSelectChange() {
@@ -2746,7 +2745,7 @@ ${recipientHtml}
 
           try {
             console.log(`[stranded] fetching /api/reports/stranded?days=${days}`);
-            const res = await fetch(`${API_BASE}/api/reports/stranded?days=${days}`, { credentials: "include" });
+            const res = await fetch(`/api/reports/stranded?days=${days}`, { credentials: "include" });
             console.log(`[stranded] response status: ${res.status}`);
             if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (status ${res.status})`);
             const data = await res.json();
@@ -2948,11 +2947,16 @@ ${recipientHtml}
 
         function openCalendar() {
           const input = document.getElementById("dateFilter");
-          input.value = ""; // ล้างวันที่เดิม
-          input.showPicker();   // เปิดปฏิทิน
-          input.onchange = () => {
-            loadWaitingParcels();
-          };
+
+          input.value = "";
+
+          input.focus();
+
+          if (input.showPicker) {
+            input.showPicker();
+          } else {
+            input.click();
+          }
         }
 
         function toggleMoreMenu() {
@@ -2991,7 +2995,7 @@ ${recipientHtml}
           try {
 
             const res = await fetch(
-              `${API_BASE}/api/parcels/${encodeURIComponent(cancelTrackingNo)}/cancel-pickup`,
+              `/api/parcels/${encodeURIComponent(cancelTrackingNo)}/cancel-pickup`,
               {
                 method: "POST",
                 credentials: "include"
@@ -3080,7 +3084,7 @@ ${recipientHtml}
           if (!confirm(`เพิ่มพัสดุที่เลือก ${ids.length} รายการเข้า Hold List ใช่หรือไม่?`)) return;
 
           try {
-            const res = await fetch(`${API_BASE}/api/parcels/hold`, {
+            const res = await fetch("/api/parcels/hold", {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -3125,7 +3129,7 @@ ${recipientHtml}
           selectBar.classList.add("hidden");
 
           try {
-            const res = await fetch(`${API_BASE}/api/parcels/hold`, { credentials: "include" });
+            const res = await fetch("/api/parcels/hold", { credentials: "include" });
             if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (status ${res.status})`);
             const data = await res.json();
 
@@ -3282,7 +3286,7 @@ ${recipientHtml}
           if (!confirm(`ต้องการนำพัสดุที่เลือก ${ids.length} รายการออกจาก Hold List ใช่หรือไม่?`)) return;
 
           try {
-            const res = await fetch(`${API_BASE}/api/parcels/unhold`, {
+            const res = await fetch("/api/parcels/unhold", {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -3324,7 +3328,7 @@ ${recipientHtml}
           }
 
           try {
-            const delRes = await fetch(`${API_BASE}/api/parcels/hold`, {
+            const delRes = await fetch("/api/parcels/hold", {
               method: "DELETE",
               credentials: "include",
               headers: { "Content-Type": "application/json" },

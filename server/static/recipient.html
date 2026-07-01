@@ -167,18 +167,21 @@ hover:bg-red-100 active:scale-95 transition">
       <div class="flex gap-2 items-center flex-wrap">
 
         <!-- queue search -->
-        <input id="queueSearch" placeholder="ค้นหาเลขคิว" class="border px-3 py-2 rounded-xl text-sm w-24" onkeydown="if(event.key === 'Enter') loadWaitingParcels()">
+        <input id="queueSearch" placeholder="ค้นหาเลขคิว" class="border px-3 py-2 rounded-xl text-sm w-24"
+          onkeydown="if(event.key === 'Enter') loadWaitingParcels()">
 
         <!-- recipient search -->
-        <input id="recipientSearch" placeholder="ค้นหาชื่อหน้ากล่อง" class="border px-3 py-2 rounded-xl text-sm w-32" onkeydown="if(event.key === 'Enter') loadWaitingParcels()">
+        <input id="recipientSearch" placeholder="ค้นหาชื่อหน้ากล่อง" class="border px-3 py-2 rounded-xl text-sm w-32"
+          onkeydown="if(event.key === 'Enter') loadWaitingParcels()">
 
         <!-- search button -->
-        <div class="relative">
-          <input id="dateFilter" type="date" class="absolute w-0 h-0 opacity-0 pointer-events-none">
-          <button onclick="openCalendar()"
-            class="bg-orange-500 hover:bg-orange-600 transition text-white px-4 py-2 rounded-xl text-sm shadow">
+        <div class="relative inline-block">
+          <button type="button" onclick="openCalendar()" class="bg-orange-500 text-white px-4 py-2 rounded-xl">
             ค้นหา
           </button>
+
+          <input id="dateFilter" type="date" class="absolute inset-0 opacity-0 w-full h-full"
+            onchange="loadWaitingParcels()">
         </div>
 
       </div>
@@ -464,7 +467,6 @@ hover:bg-red-100 active:scale-95 transition">
 
   </main>
   <script>
-    const API_BASE = "/nudpack";
 
 
     /* ---------- Globals ---------- */
@@ -495,7 +497,7 @@ hover:bg-red-100 active:scale-95 transition">
       confirming = true
 
       try {
-        await fetch(`${API_BASE}/api/parcels/${tracking}/confirm_pickup/recipient`, {
+        await fetch(`/api/parcels/${tracking}/confirm_pickup/recipient`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -525,7 +527,7 @@ hover:bg-red-100 active:scale-95 transition">
       if (!pendingVerification) {
         setStatus('');
         try {
-          const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(value)}/verify`, { credentials: "include", method: 'POST' });
+          const res = await fetch(`/api/parcels/${encodeURIComponent(value)}/verify`, { credentials: "include", method: 'POST' });
           if (!res.ok) {
 
             // ===== ไม่พบพัสดุ =====
@@ -590,7 +592,7 @@ hover:bg-red-100 active:scale-95 transition">
             return
           }
           function confirmRecipientPickup(tracking, recipientName) {
-            fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup/recipient`, {
+            fetch(`/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup/recipient`, {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -730,7 +732,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function doConfirmPickup(tracking, recipientToSend) {
       setStatus('');
       try {
-        const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup/recipient`, {
+        const res = await fetch(`/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup/recipient`, {
           credentials: "include",
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -776,7 +778,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function doSearch() {
       const q = document.getElementById('searchInput').value.trim();
       if (!q) return alert('Please input tracking or queue');
-      const res = await fetch(`${API_BASE}/api/recipient/parcels?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/recipient/parcels?q=${encodeURIComponent(q)}`);
 
       if (!res.ok) return alert('Search failed');
       const data = await res.json();
@@ -794,7 +796,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function verifyFromSearch(tracking) {
       setStatus('');
       try {
-        const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/verify`, { credentials: "include", method: "POST" });
+        const res = await fetch(`/api/parcels/${encodeURIComponent(tracking)}/verify`, { credentials: "include", method: "POST" });
         if (!res.ok) { setStatus(''); return; }
         const info = await res.json();
         pendingVerification = {
@@ -858,7 +860,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function loadReportValues() {
       const p = document.getElementById('r_period').value;
 
-      const res = await fetch(`${API_BASE}/api/reports/dates?period=${p}`, {
+      const res = await fetch(`/api/reports/dates?period=${p}`, {
         credentials: "include"
       });
 
@@ -925,7 +927,7 @@ hover:bg-red-100 active:scale-95 transition">
       }
 
       const sres = await fetch(
-        `${API_BASE}/api/reports/summary?period=daily&start=${start}&end=${end}`,
+        `/api/reports/summary?period=daily&start=${start}&end=${end}`,
         { credentials: "include" }
       );
 
@@ -987,7 +989,7 @@ hover:bg-red-100 active:scale-95 transition">
 `
 
       const tres = await fetch(
-        `${API_BASE}/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
+        `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
         { credentials: "include" }
       );
 
@@ -1091,7 +1093,7 @@ hover:bg-red-100 active:scale-95 transition">
     async function removeSelected() {
       if (selectedToDelete.size === 0) return;
 
-      const res = await fetch(`${API_BASE}/api/parcels/bulk_delete`, {
+      const res = await fetch('/api/parcels/bulk_delete', {
         credentials: "include",
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1204,7 +1206,8 @@ hover:bg-red-100 active:scale-95 transition">
         fmt: fmt
       });
 
-      window.location = `/api/reports/export?${qs.toString()}`;
+      const basePath = window.location.pathname.replace(/\/(recipient)(\.html)?\/?$/, "");
+      window.location = `${basePath}/api/reports/export?${qs.toString()}`;
     }
     /* ---------- Utilities ---------- */
     function setStatus(s) { try { document.getElementById('scanStatus').innerText = s; } catch (e) { } }
@@ -1542,7 +1545,7 @@ hover:bg-red-100 active:scale-95 transition">
       const queue = document.getElementById("queueSearch")?.value.trim() || "";
       const date = document.getElementById("dateFilter")?.value || "";
 
-      let url = `${API_BASE}/api/recipient/parcels?`;
+      let url = `/api/recipient/parcels?`;
 
       if (queue) url += `q=${encodeURIComponent(queue)}&`;
       if (date) url += `date=${date}`;
@@ -1562,7 +1565,7 @@ hover:bg-red-100 active:scale-95 transition">
 
 
     function logout() {
-      fetch(`${API_BASE}/recipient/logout`, {
+      fetch("/recipient/logout", {
         credentials: "include"
       }).then(() => {
         location.replace("/login_recipient")   // replace ไม่ให้กดย้อน
@@ -1601,7 +1604,7 @@ hover:bg-red-100 active:scale-95 transition">
         }
 
 
-        const res = await fetch(`${API_BASE}/api/recipient/parcels?${params.toString()}`, {
+        const res = await fetch(`/api/recipient/parcels?${params.toString()}`, {
           credentials: "include"
         });
 
@@ -1772,12 +1775,16 @@ ${recipientHtml}
     }
     function openCalendar() {
       const input = document.getElementById("dateFilter");
-      input.value = ""; // ล้างวันที่เดิม
-      input.showPicker(); // เปิดปฏิทิน
 
-      input.onchange = () => {
-        loadWaitingParcels();
-      };
+      input.value = "";
+
+      input.focus();
+
+      if (input.showPicker) {
+        input.showPicker();
+      } else {
+        input.click();
+      }
     }
 
     document.addEventListener("DOMContentLoaded", function () {
