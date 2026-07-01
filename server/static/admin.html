@@ -658,6 +658,16 @@ hover:bg-red-100 active:scale-95 transition">
   </div>
   <!-- ================= /Stranded Page ================= -->
 
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2
+bg-green-600 text-white px-5 py-3 rounded-xl
+shadow-lg hidden z-[99999]
+items-center gap-2">
+
+    <span>✓</span>
+
+    <span id="toastText"></span>
+
+  </div>
   <!-- ================= Hold List Page ================= -->
   <div id="holdListPage" class="fixed inset-0 bg-[#fafafa] hidden overflow-y-auto z-50">
 
@@ -817,6 +827,31 @@ hover:bg-red-100 active:scale-95 transition">
       <p id="db-updated" class="text-center text-[11px] text-gray-300 pb-2"></p>
 
     </div>
+  </div>
+  <!-- Section Action Modal -->
+  <div id="sectionModal" class="fixed inset-0 hidden bg-black/40 z-[9999] flex items-center justify-center">
+
+    <div class="bg-white rounded-2xl p-5 w-80 shadow-xl">
+
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-semibold text-slate-800">
+          Section <span id="sectionModalLabel"></span>
+        </h3>
+
+        <button onclick="closeSectionModal()">
+          ✕
+        </button>
+      </div>
+
+      <button onclick="unlockBasket()" class="w-full bg-red-500 hover:bg-red-600
+      text-white rounded-xl py-3">
+
+        🔓 ปลดลอคตระกร้า
+
+      </button>
+
+    </div>
+
   </div>
   <!-- ================= /Dashboard Page ================= -->
 
@@ -993,6 +1028,8 @@ hover:bg-red-100 active:scale-95 transition">
         </div>
       </div>
       <script>
+        const API_BASE = "/nudpack";
+
         let chartInst = null;
         let currentReportData = [];
         let reportEditMode = false;
@@ -1040,7 +1077,7 @@ hover:bg-red-100 active:scale-95 transition">
           confirming = true
 
           try {
-            await fetch(`/api/parcels/${encodeURIComponent(tracking)}/pickup`, {
+            await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/pickup`, {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -1066,7 +1103,7 @@ hover:bg-red-100 active:scale-95 transition">
           if (!pendingVerification) {
             setStatus('');
             try {
-              const res = await fetch(`/api/parcels/${encodeURIComponent(value)}/verify`, { credentials: "include", method: 'POST' });
+              const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(value)}/verify`, { credentials: "include", method: 'POST' });
               if (!res.ok) {
 
                 // ===== ไม่พบพัสดุ =====
@@ -1092,7 +1129,7 @@ hover:bg-red-100 active:scale-95 transition">
                 if (!info.admin_staff_name) {
 
                   // ยันทันที
-                  fetch(`/api/parcels/${encodeURIComponent(info.tracking)}/confirm_pickup`, {
+                  fetch(`${API_BASE}/api/parcels/${encodeURIComponent(info.tracking)}/confirm_pickup`, {
                     method: "POST",
                     credentials: "include",
                     headers: { "Content-Type": "application/json" },
@@ -1192,7 +1229,7 @@ hover:bg-red-100 active:scale-95 transition">
 
                 const trackingClean = normalizeTracking(tracking); // normalize
 
-                fetch(`/api/parcels/${encodeURIComponent(trackingClean)}/confirm_pickup`, {
+                fetch(`${API_BASE}/api/parcels/${encodeURIComponent(trackingClean)}/confirm_pickup`, {
                   method: "POST",
                   credentials: "include",
                   headers: { "Content-Type": "application/json" },
@@ -1334,7 +1371,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function doConfirmPickup(tracking, recipientToSend) {
           setStatus('');
           try {
-            const res = await fetch(`/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup`, {
+            const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/confirm_pickup`, {
               credentials: "include",
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1383,7 +1420,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function doSearch() {
           const q = document.getElementById('searchInput').value.trim();
           if (!q) return alert('Please input tracking or queue');
-          const res = await fetch(`/api/parcels/search?q=${encodeURIComponent(q)}`);
+          const res = await fetch(`${API_BASE}/api/parcels/search?q=${encodeURIComponent(q)}`);
 
           if (!res.ok) return alert('Search failed');
           const data = await res.json();
@@ -1401,7 +1438,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function verifyFromSearch(tracking) {
           setStatus('');
           try {
-            const res = await fetch(`/api/parcels/${encodeURIComponent(tracking)}/verify`, { credentials: "include", method: "POST" });
+            const res = await fetch(`${API_BASE}/api/parcels/${encodeURIComponent(tracking)}/verify`, { credentials: "include", method: "POST" });
             if (!res.ok) { setStatus(''); return; }
             const info = await res.json();
             pendingVerification = {
@@ -1465,7 +1502,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function loadReportValues() {
           const p = document.getElementById('r_period').value;
 
-          const res = await fetch(`/api/reports/dates?period=${p}`, {
+          const res = await fetch(`${API_BASE}/api/reports/dates?period=${p}`, {
             credentials: "include"
           });
 
@@ -1534,7 +1571,7 @@ hover:bg-red-100 active:scale-95 transition">
           }
 
           const sres = await fetch(
-            `/api/reports/summary?period=daily&start=${start}&end=${end}`,
+            `${API_BASE}/api/reports/summary?period=daily&start=${start}&end=${end}`,
             { credentials: "include" }
           );
 
@@ -1544,7 +1581,7 @@ hover:bg-red-100 active:scale-95 transition">
           renderReportTable(currentReportData);
 
           const ares = await fetch(
-            `/api/reports/advanced_charts?period=daily&start=${start}&end=${end}`,
+            `${API_BASE}/api/reports/advanced_charts?period=daily&start=${start}&end=${end}`,
             { credentials: "include" }
           );
           const adata = await ares.json();
@@ -1596,7 +1633,7 @@ hover:bg-red-100 active:scale-95 transition">
 `;
 
           const tres = await fetch(
-            `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
+            `${API_BASE}/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
             { credentials: "include" }
           );
 
@@ -1701,7 +1738,7 @@ hover:bg-red-100 active:scale-95 transition">
         async function removeSelected() {
           if (selectedToDelete.size === 0) return;
 
-          const res = await fetch('/api/parcels/bulk_delete', {
+          const res = await fetch(`${API_BASE}/api/parcels/bulk_delete`, {
             credentials: "include",
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1823,7 +1860,7 @@ hover:bg-red-100 active:scale-95 transition">
             const todayStr = `${yyyy}${mm}${dd}`;
 
             const res = await fetch(
-              `/api/reports/timeseries?period=hourly&start=${todayStr}&end=${todayStr}`,
+              `${API_BASE}/api/reports/timeseries?period=hourly&start=${todayStr}&end=${todayStr}`,
               { credentials: "include" }
             );
             const data = await res.json();
@@ -1845,7 +1882,7 @@ hover:bg-red-100 active:scale-95 transition">
             };
 
             const res = await fetch(
-              `/api/reports/timeseries?period=dayofweek&start=${fmt(monday)}&end=${fmt(thai)}`,
+              `${API_BASE}/api/reports/timeseries?period=dayofweek&start=${fmt(monday)}&end=${fmt(thai)}`,
               { credentials: "include" }
             );
             const data = await res.json();
@@ -1858,7 +1895,7 @@ hover:bg-red-100 active:scale-95 transition">
             if (!start || !end) return;
 
             const res = await fetch(
-              `/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
+              `${API_BASE}/api/reports/timeseries?period=daily&start=${start}&end=${end}`,
               { credentials: "include" }
             );
             const data = await res.json();
@@ -1947,7 +1984,7 @@ hover:bg-red-100 active:scale-95 transition">
           // Horizontal Bar Chart (Peak Hours) — ดึงจาก timeseries hourly เพื่อความถูกต้อง
           try {
             const phRes = await fetch(
-              `/api/reports/timeseries?period=hourly&start=${start}&end=${end}`,
+              `${API_BASE}/api/reports/timeseries?period=hourly&start=${start}&end=${end}`,
               { credentials: "include" }
             );
             const phData = await phRes.json();
@@ -2012,7 +2049,7 @@ hover:bg-red-100 active:scale-95 transition">
           // 1) ส่ง session cookie ไปด้วย (credentials: include)
           // 2) URL แบบ absolute (ขึ้นต้นด้วย /) ทำงานถูกต้องเสมอ ไม่ว่า app จะอยู่ใต้ subprefix ใด
           try {
-            const res = await fetch(`/api/reports/export?${qs.toString()}`, {
+            const res = await fetch(`${API_BASE}/api/reports/export?${qs.toString()}`, {
               credentials: "include"
             });
             if (!res.ok) {
@@ -2375,7 +2412,7 @@ hover:bg-red-100 active:scale-95 transition">
           const queue = document.getElementById("queueSearch")?.value.trim() || "";
           const date = document.getElementById("dateFilter")?.value || "";
 
-          let url = `/api/parcels/search?`;
+          let url = `${API_BASE}/api/parcels/search?`;
 
           if (queue) url += `q=${encodeURIComponent(queue)}&`;
           if (date) url += `date=${date}`;
@@ -2390,7 +2427,7 @@ hover:bg-red-100 active:scale-95 transition">
 
 
         function logout() {
-          fetch("/admin/logout", {
+          fetch(`${API_BASE}/admin/logout`, {
             credentials: "include"
           }).then(() => {
             location.replace("/login_admin")   // replace ไม่ให้กดย้อน
@@ -2438,7 +2475,7 @@ hover:bg-red-100 active:scale-95 transition">
             }
 
 
-            const res = await fetch(`/api/parcels?${params.toString()}`, {
+            const res = await fetch(`${API_BASE}/api/parcels?${params.toString()}`, {
               credentials: "include"
             });
 
@@ -2555,7 +2592,7 @@ ${recipientHtml}
             });
 
           try {
-            const res = await fetch("/api/dashboard/today", { credentials: "include" });
+            const res = await fetch(`${API_BASE}/api/dashboard/today`, { credentials: "include" });
             if (!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
             const d = await res.json();
 
@@ -2592,12 +2629,28 @@ ${recipientHtml}
                 }
                 const label = s.name;  // e.g. "1–50"
                 const sNum = i + 1;   // S1…S20
+                console.log("SECTION =", s);
                 return `
-                  <div title="Section ${sNum}: ${s.used}/${s.total} (${pct}%)" style="background:${bg};border:1px solid ${border};" class="rounded-lg p-1.5 flex flex-col items-center justify-center gap-0.5 cursor-default select-none">
-                    <span style="color:${fg};" class="text-[9px] font-semibold leading-none opacity-70">S${sNum}</span>
-                    <span style="color:${fg};" class="text-[13px] font-bold leading-none">${pct}%</span>
-                    <span style="color:${fg};" class="text-[8px] leading-none opacity-60">${s.used}/${s.total}</span>
-                  </div>`;
+<div
+    onclick="openSectionModal(${s.id}, '${label}')"
+    title="Section ${label}"
+    style="background:${bg};border:1px solid ${border};"
+    class="rounded-lg p-1.5 flex flex-col items-center justify-center gap-0.5 cursor-pointer hover:scale-105 active:scale-95 transition">
+
+    <span style="color:${fg};" class="text-[9px] font-semibold leading-none opacity-70">
+        ${label}
+    </span>
+
+    <span style="color:${fg};" class="text-[13px] font-bold leading-none">
+        ${pct}%
+    </span>
+
+    <span style="color:${fg};" class="text-[8px] leading-none opacity-60">
+        ${s.used}/${s.total}
+    </span>
+
+</div>
+`;
               }).join("");
             }
 
@@ -2679,7 +2732,7 @@ ${recipientHtml}
         async function forceConfirmPending() {
           if (!confirm("ยืนยันพัสดุสถานะ 'กำลังรอ' ทั้งหมดเป็น 'ยังไม่ได้รับ' ใช่หรือไม่?")) return;
           try {
-            const res = await fetch("/api/dashboard/force_confirm_pending", {
+            const res = await fetch(`${API_BASE}/api/dashboard/force_confirm_pending`, {
               method: "POST",
               headers: { "Content-Type": "application/json" }
             });
@@ -2724,7 +2777,7 @@ ${recipientHtml}
           // ใช้ fetch + Blob แทน window.location เพื่อส่ง session cookie และรองรับ subprefix
           // (ใช้ absolute path ขึ้นต้นด้วย / เพื่อให้ resolve ถูกต้องเสมอ)
           try {
-            const res = await fetch(`/api/reports/stranded/export?days=${currentStrandedDays}`, {
+            const res = await fetch(`${API_BASE}/api/reports/stranded/export?days=${currentStrandedDays}`, {
               credentials: "include"
             });
             if (!res.ok) {
@@ -2794,7 +2847,7 @@ ${recipientHtml}
 
           try {
             console.log(`[stranded] fetching /api/reports/stranded?days=${days}`);
-            const res = await fetch(`/api/reports/stranded?days=${days}`, { credentials: "include" });
+            const res = await fetch(`${API_BASE}/api/reports/stranded?days=${days}`, { credentials: "include" });
             console.log(`[stranded] response status: ${res.status}`);
             if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (status ${res.status})`);
             const data = await res.json();
@@ -2967,31 +3020,27 @@ ${recipientHtml}
             menu.classList.add('hidden');
           }
         });
-
         function setDefaultToday() {
 
-          // เวลาไทย +7
-          const now = new Date()
+          const now = new Date();
           const thai = new Date(
             now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
-          )
+          );
 
-          const dd = String(thai.getDate()).padStart(2, "0")
-          const mm = String(thai.getMonth() + 1).padStart(2, "0")
-          const yyyy = thai.getFullYear()
+          const dd = String(thai.getDate()).padStart(2, "0");
+          const mm = String(thai.getMonth() + 1).padStart(2, "0");
+          const yyyy = thai.getFullYear();
 
-          // ต้องมี backtick
-          const todayISO = `${yyyy}-${mm}-${dd}`
-          const dateInput = document.getElementById("dateFilter")
+          const todayISO = `${yyyy}-${mm}-${dd}`;
+
+          const dateInput = document.getElementById("dateFilter");
+
           if (dateInput) {
-            dateInput.value = todayISO
+            dateInput.value = todayISO;
           }
 
-          // แสดงข้อความเริ่มต้นแทนการโหลดพัสดุอัตโนมัติ
-          const box = document.getElementById("parcelList");
-          if (box) {
-            box.innerHTML = `<div class="text-sm text-gray-500 text-center py-4">กรุณากรอกเลขคิวหรือชื่อหน้ากล่อง</div>`;
-          }
+          // โหลดของวันนี้ทันที
+          loadWaitingParcels();
         }
 
         function openCalendar() {
@@ -3044,7 +3093,7 @@ ${recipientHtml}
           try {
 
             const res = await fetch(
-              `/api/parcels/${encodeURIComponent(cancelTrackingNo)}/cancel-pickup`,
+              `${API_BASE}/api/parcels/${encodeURIComponent(cancelTrackingNo)}/cancel-pickup`,
               {
                 method: "POST",
                 credentials: "include"
@@ -3078,6 +3127,87 @@ ${recipientHtml}
             );
 
           }
+        }
+        let selectedSectionId = null;
+
+        function openSectionModal(sectionId, label) {
+          selectedSectionId = sectionId;
+
+          document.getElementById("sectionModalLabel").textContent = label;
+
+          document
+            .getElementById("sectionModal")
+            .classList.remove("hidden");
+        }
+
+        function closeSectionModal() {
+          selectedSectionId = null;
+
+          document
+            .getElementById("sectionModal")
+            .classList.add("hidden");
+        }
+
+        async function unlockBasket() {
+
+          console.log("selectedSectionId =", selectedSectionId);
+
+          if (!selectedSectionId) {
+            alert("ไม่พบ section");
+            return;
+          }
+
+          try {
+
+            const res = await fetch(
+              `${API_BASE}/api/queue_reservations/unlock`,
+              {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  section_id: selectedSectionId
+                })
+              }
+            );
+
+            const data = await res.json();
+
+            console.log(data);
+
+            if (!res.ok) {
+              showToast(data.detail || "เกิดข้อผิดพลาด");
+              return;
+            }
+
+            showToast(data.message || "ปลดลอคตระกร้าสำเร็จ");
+
+            closeSectionModal();
+
+            loadDashboard();
+
+          } catch (e) {
+
+            console.error(e);
+
+            alert("เรียก API ไม่สำเร็จ");
+          }
+        }
+        function openSectionModal(sectionId, label) {
+
+          console.log("CLICK SECTION =", sectionId);
+
+          selectedSectionId = sectionId;
+
+          document.getElementById(
+            "sectionModalLabel"
+          ).textContent = label;
+
+          document
+            .getElementById("sectionModal")
+            .classList.remove("hidden");
         }
       </script>
 
@@ -3133,7 +3263,7 @@ ${recipientHtml}
           if (!confirm(`เพิ่มพัสดุที่เลือก ${ids.length} รายการเข้า Hold List ใช่หรือไม่?`)) return;
 
           try {
-            const res = await fetch("/api/parcels/hold", {
+            const res = await fetch(`${API_BASE}/api/parcels/hold`, {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -3178,7 +3308,7 @@ ${recipientHtml}
           selectBar.classList.add("hidden");
 
           try {
-            const res = await fetch("/api/parcels/hold", { credentials: "include" });
+            const res = await fetch(`${API_BASE}/api/parcels/hold`, { credentials: "include" });
             if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (status ${res.status})`);
             const data = await res.json();
 
@@ -3335,7 +3465,7 @@ ${recipientHtml}
           if (!confirm(`ต้องการนำพัสดุที่เลือก ${ids.length} รายการออกจาก Hold List ใช่หรือไม่?`)) return;
 
           try {
-            const res = await fetch("/api/parcels/unhold", {
+            const res = await fetch(`${API_BASE}/api/parcels/unhold`, {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -3377,7 +3507,7 @@ ${recipientHtml}
           }
 
           try {
-            const delRes = await fetch("/api/parcels/hold", {
+            const delRes = await fetch(`${API_BASE}/api/parcels/hold`, {
               method: "DELETE",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -3391,6 +3521,28 @@ ${recipientHtml}
           } catch (err) {
             alert("เกิดข้อผิดพลาด: " + err.message);
           }
+        }
+        function showToast(message) {
+
+          const toast =
+            document.getElementById("toast");
+
+          const text =
+            document.getElementById("toastText");
+
+          text.textContent = message;
+
+          toast.classList.remove("hidden");
+
+          toast.classList.add("flex");
+
+          setTimeout(() => {
+
+            toast.classList.add("hidden");
+
+            toast.classList.remove("flex");
+
+          }, 2500);
         }
       </script>
 
@@ -3406,6 +3558,7 @@ ${recipientHtml}
         function openAuditLogPage() {
           window.location.href = "/audit";
         }
+
       </script>
 
 </body>
