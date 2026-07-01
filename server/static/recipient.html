@@ -1206,8 +1206,7 @@ hover:bg-red-100 active:scale-95 transition">
         fmt: fmt
       });
 
-      const basePath = window.location.pathname.replace(/\/(recipient)(\.html)?\/?$/, "");
-      window.location = `${basePath}/api/reports/export?${qs.toString()}`;
+      window.location = `/api/reports/export?${qs.toString()}`;
     }
     /* ---------- Utilities ---------- */
     function setStatus(s) { try { document.getElementById('scanStatus').innerText = s; } catch (e) { } }

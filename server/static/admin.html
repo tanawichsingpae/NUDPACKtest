@@ -1991,7 +1991,7 @@ hover:bg-red-100 active:scale-95 transition">
         }
 
         /* ---------- export ---------- */
-        function exportReport(fmt = "csv") {
+        async function exportReport(fmt = "csv") {
 
           const start = unslash(document.getElementById("r_start").value);
           const end = unslash(document.getElementById("r_end").value);
@@ -2008,8 +2008,33 @@ hover:bg-red-100 active:scale-95 transition">
             fmt: fmt
           });
 
-          const basePath = window.location.pathname.replace(/\/(admin)(\.html)?\/?$/, "");
-          window.location = `${basePath}/api/reports/export?${qs.toString()}`;
+          // ใช้ fetch + Blob แทน window.location เพื่อ:
+          // 1) ส่ง session cookie ไปด้วย (credentials: include)
+          // 2) URL แบบ relative ทำงานถูกต้องแม้ app อยู่ใต้ subprefix (เช่น /nudpack/)
+          try {
+            const res = await fetch(`api/reports/export?${qs.toString()}`, {
+              credentials: "include"
+            });
+            if (!res.ok) {
+              const errText = await res.text().catch(() => res.statusText);
+              alert(`Export ล้มเหลว (${res.status}): ${errText}`);
+              return;
+            }
+            const blob = await res.blob();
+            const disposition = res.headers.get("Content-Disposition") || "";
+            let filename = fmt === "xlsx" ? "report.xlsx" : "report.csv";
+            const m = disposition.match(/filename\*?=(?:UTF-8'')?([^;\r\n]+)/i);
+            if (m) filename = decodeURIComponent(m[1].replace(/"/g, ""));
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+          } catch (err) {
+            alert("Export ล้มเหลว: " + err.message);
+          }
         }
         /* ---------- Utilities ---------- */
         function setStatus(s) { try { document.getElementById('scanStatus').innerText = s; } catch (e) { } }
@@ -2695,9 +2720,32 @@ ${recipientHtml}
           adminPage.classList.remove("hidden");
         }
 
-        function exportStrandedParcels() {
-          const basePath = window.location.pathname.replace(/\/(admin)(\.html)?\/?$/, "");
-          window.location.href = `${basePath}/api/reports/stranded/export?days=${currentStrandedDays}`;
+        async function exportStrandedParcels() {
+          // ใช้ fetch + Blob แทน window.location เพื่อส่ง session cookie และรองรับ subprefix
+          try {
+            const res = await fetch(`api/reports/stranded/export?days=${currentStrandedDays}`, {
+              credentials: "include"
+            });
+            if (!res.ok) {
+              const errText = await res.text().catch(() => res.statusText);
+              alert(`Export ล้มเหลว (${res.status}): ${errText}`);
+              return;
+            }
+            const blob = await res.blob();
+            const disposition = res.headers.get("Content-Disposition") || "";
+            let filename = "stranded_parcels.xlsx";
+            const m = disposition.match(/filename\*?=(?:UTF-8'')?([^;\r\n]+)/i);
+            if (m) filename = decodeURIComponent(m[1].replace(/"/g, ""));
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+          } catch (err) {
+            alert("Export ล้มเหลว: " + err.message);
+          }
         }
 
         function onStrandedSelectChange() {
